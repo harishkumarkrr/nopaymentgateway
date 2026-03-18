@@ -733,10 +733,10 @@ function MainApp() {
                             <ChevronRight size={20} className="text-zinc-300 group-hover:text-emerald-500 transition-colors" />
                           </div>
                           <div className="bg-zinc-50 p-4 rounded-2xl border border-black/[0.02] flex items-center justify-between">
-                            <code className="text-xs font-bold text-zinc-600">{hostedProduct.upiId}</code>
+                            <code className="text-xs font-bold text-zinc-600">{hostedProduct.methods.upi}</code>
                             <button 
                               onClick={() => {
-                                navigator.clipboard.writeText(hostedProduct.upiId || '');
+                                navigator.clipboard.writeText(hostedProduct.methods.upi || '');
                                 setCopiedField('upi');
                                 setTimeout(() => setCopiedField(null), 2000);
                               }}
@@ -765,11 +765,11 @@ function MainApp() {
                           <div className="space-y-2">
                             <div className="bg-zinc-50 p-3 rounded-xl border border-black/[0.02] flex items-center justify-between">
                               <span className="text-[10px] font-black text-zinc-400 uppercase">Account</span>
-                              <code className="text-xs font-bold text-zinc-600">{hostedProduct.bankAcc}</code>
+                              <code className="text-xs font-bold text-zinc-600">{hostedProduct.methods.bank.account}</code>
                             </div>
                             <div className="bg-zinc-50 p-3 rounded-xl border border-black/[0.02] flex items-center justify-between">
                               <span className="text-[10px] font-black text-zinc-400 uppercase">IFSC</span>
-                              <code className="text-xs font-bold text-zinc-600">{hostedProduct.bankIfsc}</code>
+                              <code className="text-xs font-bold text-zinc-600">{hostedProduct.methods.bank.ifsc}</code>
                             </div>
                           </div>
                         </div>
@@ -790,10 +790,10 @@ function MainApp() {
                             <ChevronRight size={20} className="text-zinc-300 group-hover:text-orange-500 transition-colors" />
                           </div>
                           <div className="bg-zinc-50 p-4 rounded-2xl border border-black/[0.02] flex items-center justify-between">
-                            <code className="text-[10px] font-bold text-zinc-600 break-all">{hostedProduct.cryptoAddress}</code>
+                            <code className="text-[10px] font-bold text-zinc-600 break-all">{hostedProduct.methods.crypto.address}</code>
                             <button 
                               onClick={() => {
-                                navigator.clipboard.writeText(hostedProduct.cryptoAddress || '');
+                                navigator.clipboard.writeText(hostedProduct.methods.crypto?.address || '');
                                 setCopiedField('crypto');
                                 setTimeout(() => setCopiedField(null), 2000);
                               }}

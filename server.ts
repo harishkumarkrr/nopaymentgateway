@@ -3,7 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import "dotenv/config";
 
-export const app = express();
+const app = express();
 const PORT = 3000;
 
 // API routes

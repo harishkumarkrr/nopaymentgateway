@@ -3,9 +3,10 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import "dotenv/config";
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+export const app = express();
+const PORT = 3000;
+
+export async function startServer() {
 
   // API routes FIRST
   app.get("/api/health", (req, res) => {
@@ -90,9 +91,18 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+    // In production/Vercel, we don't necessarily call listen here if exported
+  } else {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
-startServer();
+// For local development with tsx
+if (process.env.NODE_ENV !== 'production') {
+  startServer();
+}
+
+export default app;

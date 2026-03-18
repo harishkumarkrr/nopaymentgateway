@@ -3,6 +3,8 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import "dotenv/config";
 
+console.log("Server starting...");
+
 const app = express();
 const PORT = 3000;
 
@@ -82,6 +84,12 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
+
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Internal Server Error", message: err.message });
+});
 
 export async function startServer() {
   // Vite middleware for development

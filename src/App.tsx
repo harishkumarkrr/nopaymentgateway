@@ -718,6 +718,7 @@ function MainApp() {
                     </div>
 
                     <div className="space-y-4">
+                      {console.log("Hosted Product Data:", hostedProduct)}
                       {hostedProduct.methods.upi && (
                         <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer">
                           <div className="flex items-center justify-between mb-4">

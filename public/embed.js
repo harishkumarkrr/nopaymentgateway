@@ -10,7 +10,7 @@
     const style = document.createElement('style');
     style.id = 'nopaymentgateway-styles';
     style.textContent = `
-      .pixelpay-container {
+      .nopaymentgateway-container {
         display: inline-block;
         position: relative;
         cursor: pointer;
@@ -18,16 +18,16 @@
         border-radius: 16px;
         overflow: hidden;
       }
-      .pixelpay-container:hover {
+      .nopaymentgateway-container:hover {
         transform: scale(1.02);
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
       }
-      .pixelpay-container img {
+      .nopaymentgateway-container img {
         display: block;
         max-width: 100%;
         height: auto;
       }
-      .pixelpay-overlay {
+      .nopaymentgateway-overlay {
         position: absolute;
         inset: 0;
         background: rgba(0,0,0,0);
@@ -36,10 +36,10 @@
         align-items: center;
         justify-content: center;
       }
-      .pixelpay-container:hover .pixelpay-overlay {
+      .nopaymentgateway-container:hover .nopaymentgateway-overlay {
         background: rgba(0,0,0,0.05);
       }
-      .pixelpay-badge {
+      .nopaymentgateway-badge {
         opacity: 0;
         transform: translateY(10px);
         transition: all 0.2s ease;
@@ -50,10 +50,10 @@
         font-family: system-ui, sans-serif;
         font-size: 14px;
         font-weight: bold;
-        color: #4f46e5;
+        color: #10b981;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       }
-      .pixelpay-container:hover .pixelpay-badge {
+      .nopaymentgateway-container:hover .nopaymentgateway-badge {
         opacity: 1;
         transform: translateY(0);
       }
@@ -226,12 +226,12 @@
   }
 
   async function initContainer(container) {
-    if (container.dataset.pixelpayInitialized) return;
-    container.dataset.pixelpayInitialized = "true";
+    if (container.dataset.nopaymentgatewayInitialized) return;
+    container.dataset.nopaymentgatewayInitialized = "true";
 
-    const productId = container.dataset.pixelpayId;
+    const productId = container.dataset.nopaymentgatewayId;
     if (!productId) {
-      console.warn("NoPaymentGateway.xyz: Container found but no data-pixelpay-id attribute provided.");
+      console.warn("NoPaymentGateway.xyz: Container found but no data-nopaymentgateway-id attribute provided.");
       return;
     }
 
@@ -247,11 +247,11 @@
       }
 
       // Render image inside container
-      container.className = "pixelpay-container";
+      container.className = "nopaymentgateway-container";
       container.innerHTML = `
         <img src="${data.coverImage}" alt="Buy ${data.itemName || 'Product'}" />
-        <div class="pixelpay-overlay">
-          <div class="pixelpay-badge">Click to Buy</div>
+        <div class="nopaymentgateway-overlay">
+          <div class="nopaymentgateway-badge">Click to Buy</div>
         </div>
       `;
 
@@ -271,9 +271,9 @@
 
   // Scan DOM for containers
   function scanDOM() {
-    const containers = document.querySelectorAll('div[data-pixelpay-id]');
+    const containers = document.querySelectorAll('div[data-nopaymentgateway-id]');
     if (containers.length > 0) {
-      console.log(`PixelPay: Found ${containers.length} containers to initialize.`);
+      console.log(`NoPaymentGateway.xyz: Found ${containers.length} containers to initialize.`);
     }
     containers.forEach(initContainer);
   }

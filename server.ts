@@ -6,76 +6,75 @@ import "dotenv/config";
 export const app = express();
 const PORT = 3000;
 
+// API routes
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.get("/api/dashboard", (req, res) => {
+  res.json({
+    title: "Dashboard Overview",
+    content: "Welcome to your NoPaymentGateway.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
+  });
+});
+
+app.get("/api/create", (req, res) => {
+  res.json({
+    title: "Create Product",
+    content: "Generate a new payment link by providing product details and your preferred payment methods."
+  });
+});
+
+app.get("/api/playground", (req, res) => {
+  res.json({
+    title: "Playground",
+    content: "Experience your products in a live environment. Preview your hosted storefront and test how your checkout links behave when embedded into external websites."
+  });
+});
+
+app.get("/api/docs", (req, res) => {
+  res.json({
+    title: "Integration & API",
+    content: "Comprehensive documentation for integrating NoPaymentGateway.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
+  });
+});
+
+app.get("/api/profile", (req, res) => {
+  res.json({
+    title: "Profile Settings",
+    content: "Manage your personal information, contact details, and account preferences."
+  });
+});
+
+app.get("/api/security", (req, res) => {
+  res.json({
+    title: "Security Settings",
+    content: "Protect your account with two-factor authentication, login notifications, and session management."
+  });
+});
+
+app.get("/api/contact", (req, res) => {
+  res.json({
+    title: "Contact Us",
+    content: "Get in touch with our team for any inquiries. Email us at support@nopaymentgateway.xyz or call us at 1-800-NOPAYMENT. Our support hours are Monday to Friday, 9 AM to 6 PM EST."
+  });
+});
+
+app.get("/api/terms", (req, res) => {
+  res.json({
+    title: "Terms and Conditions",
+    content: "By using NoPaymentGateway.xyz, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods."
+  });
+});
+
+app.get("/api/privacy", (req, res) => {
+  res.json({
+    title: "Privacy Policy",
+    content: "Your privacy is our priority. We collect only the necessary information required to process payments securely. We do not sell your personal data to third parties. All payment data is encrypted in transit and at rest."
+  });
+});
+
 export async function startServer() {
-
-  // API routes FIRST
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
-  });
-
-  app.get("/api/dashboard", (req, res) => {
-    res.json({
-      title: "Dashboard Overview",
-      content: "Welcome to your NoPaymentGateway.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
-    });
-  });
-
-  app.get("/api/create", (req, res) => {
-    res.json({
-      title: "Create Product",
-      content: "Generate a new payment link by providing product details and your preferred payment methods."
-    });
-  });
-
-  app.get("/api/playground", (req, res) => {
-    res.json({
-      title: "Playground",
-      content: "Experience your products in a live environment. Preview your hosted storefront and test how your checkout links behave when embedded into external websites."
-    });
-  });
-
-  app.get("/api/docs", (req, res) => {
-    res.json({
-      title: "Integration & API",
-      content: "Comprehensive documentation for integrating NoPaymentGateway.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
-    });
-  });
-
-  app.get("/api/profile", (req, res) => {
-    res.json({
-      title: "Profile Settings",
-      content: "Manage your personal information, contact details, and account preferences."
-    });
-  });
-
-  app.get("/api/security", (req, res) => {
-    res.json({
-      title: "Security Settings",
-      content: "Protect your account with two-factor authentication, login notifications, and session management."
-    });
-  });
-
-  app.get("/api/contact", (req, res) => {
-    res.json({
-      title: "Contact Us",
-      content: "Get in touch with our team for any inquiries. Email us at support@nopaymentgateway.xyz or call us at 1-800-NOPAYMENT. Our support hours are Monday to Friday, 9 AM to 6 PM EST."
-    });
-  });
-
-  app.get("/api/terms", (req, res) => {
-    res.json({
-      title: "Terms and Conditions",
-      content: "By using NoPaymentGateway.xyz, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods."
-    });
-  });
-
-  app.get("/api/privacy", (req, res) => {
-    res.json({
-      title: "Privacy Policy",
-      content: "Your privacy is our priority. We collect only the necessary information required to process payments securely. We do not sell your personal data to third parties. All payment data is encrypted in transit and at rest."
-    });
-  });
-
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

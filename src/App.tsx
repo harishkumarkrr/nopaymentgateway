@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, Component } from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, Navigate, useParams } from 'react-router-dom';
 import { 
   CreditCard, 
   Code, 
@@ -32,7 +32,13 @@ import {
   MapPin,
   Calendar,
   Shield,
-  Key
+  Key,
+  Share2,
+  PlusCircle,
+  PlayCircle,
+  FileText,
+  ExternalLink,
+  Bitcoin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, loginWithGoogle, logout } from './firebase';
@@ -142,15 +148,40 @@ interface PaymentPayload {
 function MainApp() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { productId: hostedProductId } = useParams();
   
   // Derive activeTab from location.pathname
-  const activeTab = location.pathname.substring(1) || 'dashboard';
+  const activeTab = hostedProductId ? 'pay' : (location.pathname.substring(1) || 'dashboard');
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   // Auth State
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+
+  // Hosted Payment Page logic
+  const [hostedProduct, setHostedProduct] = useState<PaymentPayload | null>(null);
+  const [hostedLoading, setHostedLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'pay' && hostedProductId) {
+      const fetchHostedProduct = async () => {
+        setHostedLoading(true);
+        try {
+          const docRef = doc(db, 'products', hostedProductId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setHostedProduct(docSnap.data() as PaymentPayload);
+          }
+        } catch (err) {
+          console.error("Error fetching hosted product:", err);
+        } finally {
+          setHostedLoading(false);
+        }
+      };
+      fetchHostedProduct();
+    }
+  }, [activeTab, hostedProductId]);
 
   useEffect(() => {
     if (user && location.pathname === '/') {
@@ -406,7 +437,7 @@ function MainApp() {
     return <div className="min-h-screen bg-white flex items-center justify-center text-zinc-900">Loading...</div>;
   }
 
-  if (!user && !['contact', 'terms', 'privacy'].includes(activeTab)) {
+  if (!user && !['contact', 'terms', 'privacy', 'pay'].includes(activeTab)) {
     return (
       <div className="min-h-screen bg-white text-zinc-900 selection:bg-emerald-500/30 font-sans overflow-y-auto flex flex-col">
         {/* Navigation */}
@@ -416,7 +447,7 @@ function MainApp() {
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <CreditCard size={18} className="text-zinc-900" />
               </div>
-              <span className="font-bold text-lg tracking-tight">PixelPay</span>
+              <span className="font-bold text-lg tracking-tight">NoPaymentGateway.xyz</span>
             </div>
             <div className="flex items-center gap-4">
               <button onClick={loginWithGoogle} className="text-sm font-medium hover:text-emerald-400 transition-colors">
@@ -489,7 +520,7 @@ function MainApp() {
               <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center">
                 <CreditCard size={14} className="text-white" />
               </div>
-              <span className="font-bold text-sm tracking-tight">PixelPay</span>
+              <span className="font-bold text-sm tracking-tight">NoPaymentGateway.xyz</span>
             </div>
             <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-zinc-500">
               <Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link>
@@ -621,6 +652,179 @@ function MainApp() {
           <PageHeader />
           
           {/* DASHBOARD TAB */}
+          {activeTab === 'pay' && (
+            <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
+              {hostedLoading ? (
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-zinc-500 font-medium">Loading payment page...</p>
+                </div>
+              ) : hostedProduct ? (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl shadow-black/5 overflow-hidden border border-black/[0.03] flex flex-col md:flex-row"
+                >
+                  {/* Left Side: Product Info */}
+                  <div className="flex-1 p-8 md:p-12 border-b md:border-b-0 md:border-r border-zinc-100">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-10 h-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                        <ShieldCheck size={20} />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-widest text-zinc-400">NoPaymentGateway.xyz</span>
+                    </div>
+
+                    {hostedProduct.coverImage && (
+                      <div className="aspect-video w-full rounded-[2rem] overflow-hidden mb-8 shadow-xl shadow-black/5">
+                        <img 
+                          src={hostedProduct.coverImage} 
+                          alt={hostedProduct.itemName}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+
+                    <h1 className="text-4xl font-black text-zinc-900 mb-4 tracking-tight leading-tight">
+                      {hostedProduct.itemName}
+                    </h1>
+                    <p className="text-zinc-500 text-lg mb-8 leading-relaxed">
+                      Secure payment request from <span className="font-bold text-zinc-900">{hostedProduct.merchantName}</span>. 
+                      Your transaction is protected by end-to-end encryption.
+                    </p>
+
+                    <div className="flex items-center gap-4 p-6 bg-zinc-50 rounded-[2rem] border border-black/[0.02]">
+                      <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-black/[0.03]">
+                        <Building2 size={24} className="text-zinc-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest font-black text-zinc-400 mb-1">Merchant</p>
+                        <p className="font-bold text-zinc-900">{hostedProduct.merchantName}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Side: Payment Methods */}
+                  <div className="flex-1 p-8 md:p-12 bg-zinc-50/50">
+                    <div className="mb-10 text-center md:text-left">
+                      <p className="text-[10px] uppercase tracking-widest font-black text-zinc-400 mb-2">Amount to Pay</p>
+                      <div className="flex items-baseline justify-center md:justify-start gap-2">
+                        <span className="text-5xl font-black text-zinc-900 tracking-tighter">
+                          {hostedProduct.currency === 'INR' ? '₹' : hostedProduct.currency === 'USD' ? '$' : hostedProduct.currency === 'EUR' ? '€' : hostedProduct.currency}
+                          {hostedProduct.amount}
+                        </span>
+                        <span className="text-zinc-400 font-bold uppercase tracking-widest text-xs">{hostedProduct.currency}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {hostedProduct.methods.upi && (
+                        <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                <Smartphone size={24} className="text-emerald-600 group-hover:text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-zinc-900">UPI Payment</h4>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Instant & Secure</p>
+                              </div>
+                            </div>
+                            <ChevronRight size={20} className="text-zinc-300 group-hover:text-emerald-500 transition-colors" />
+                          </div>
+                          <div className="bg-zinc-50 p-4 rounded-2xl border border-black/[0.02] flex items-center justify-between">
+                            <code className="text-xs font-bold text-zinc-600">{hostedProduct.upiId}</code>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(hostedProduct.upiId || '');
+                                setCopiedField('upi');
+                                setTimeout(() => setCopiedField(null), 2000);
+                              }}
+                              className="p-2 hover:bg-white rounded-lg transition-colors text-zinc-400 hover:text-emerald-500"
+                            >
+                              {copiedField === 'upi' ? <Check size={16} /> : <Copy size={16} />}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {hostedProduct.methods.bank && (
+                        <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                <Building2 size={24} className="text-blue-600 group-hover:text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-zinc-900">Bank Transfer</h4>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">NEFT / IMPS / RTGS</p>
+                              </div>
+                            </div>
+                            <ChevronRight size={20} className="text-zinc-300 group-hover:text-blue-500 transition-colors" />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-zinc-50 p-3 rounded-xl border border-black/[0.02] flex items-center justify-between">
+                              <span className="text-[10px] font-black text-zinc-400 uppercase">Account</span>
+                              <code className="text-xs font-bold text-zinc-600">{hostedProduct.bankAcc}</code>
+                            </div>
+                            <div className="bg-zinc-50 p-3 rounded-xl border border-black/[0.02] flex items-center justify-between">
+                              <span className="text-[10px] font-black text-zinc-400 uppercase">IFSC</span>
+                              <code className="text-xs font-bold text-zinc-600">{hostedProduct.bankIfsc}</code>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {hostedProduct.methods.crypto && (
+                        <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center border border-orange-100 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                                <Bitcoin size={24} className="text-orange-600 group-hover:text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-zinc-900">Crypto Wallet</h4>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">BTC / ETH / USDT</p>
+                              </div>
+                            </div>
+                            <ChevronRight size={20} className="text-zinc-300 group-hover:text-orange-500 transition-colors" />
+                          </div>
+                          <div className="bg-zinc-50 p-4 rounded-2xl border border-black/[0.02] flex items-center justify-between">
+                            <code className="text-[10px] font-bold text-zinc-600 break-all">{hostedProduct.cryptoAddress}</code>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(hostedProduct.cryptoAddress || '');
+                                setCopiedField('crypto');
+                                setTimeout(() => setCopiedField(null), 2000);
+                              }}
+                              className="p-2 hover:bg-white rounded-lg transition-colors text-zinc-400 hover:text-orange-500"
+                            >
+                              {copiedField === 'crypto' ? <Check size={16} /> : <Copy size={16} />}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-12 text-center">
+                      <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 mb-4">
+                        <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption
+                      </p>
+                      <p className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
+                        Powered by NoPaymentGateway.xyz
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="text-center">
+                  <h2 className="text-2xl font-black text-zinc-900 mb-2">Product Not Found</h2>
+                  <p className="text-zinc-500">The payment link you followed might be invalid or expired.</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'dashboard' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
               
@@ -646,64 +850,81 @@ function MainApp() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {products.map((product) => (
-                    <motion.div 
-                      layout
-                      key={product.id} 
-                      className="premium-card group overflow-hidden flex flex-col"
-                    >
-                      <div className="aspect-square relative overflow-hidden bg-zinc-50">
-                        <img 
-                          src={product.data.coverImage} 
-                          alt={product.data.itemName} 
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                        />
-                        <div className="absolute top-4 right-4 flex gap-2">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(product.id);
-                            }}
-                            className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-black/5 flex items-center justify-center text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                          {products.map((product) => (
+                            <motion.div 
+                              layout
+                              key={product.id} 
+                              className="premium-card group overflow-hidden flex flex-col"
+                            >
+                              <div className="aspect-square relative overflow-hidden bg-zinc-50">
+                                <img 
+                                  src={product.data.coverImage} 
+                                  alt={product.data.itemName} 
+                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                />
+                                <div className="absolute top-4 right-4 flex gap-2">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDelete(product.id);
+                                    }}
+                                    className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-black/5 flex items-center justify-center text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="p-6 flex-1 flex flex-col">
+                                <div className="flex items-start justify-between gap-4 mb-4">
+                                  <div>
+                                    <h3 className="font-display font-bold text-zinc-900 text-lg leading-tight">{product.data.itemName}</h3>
+                                    <p className="text-sm text-zinc-500 mt-1">{product.data.currency} {product.data.amount}</p>
+                                  </div>
+                                  <div className="px-2 py-1 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded-md border border-brand-100">
+                                    Active
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-auto space-y-2">
+                                  <div className="flex gap-2">
+                                    <button 
+                                      onClick={() => {
+                                        setCheckoutData(product.data);
+                                        setIsCheckoutOpen(true);
+                                      }}
+                                      className="flex-1 py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
+                                    >
+                                      <PlayCircle size={14} /> Preview
+                                    </button>
+                                    <button 
+                                      onClick={() => {
+                                        const shareUrl = `${window.location.origin}/pay/${product.id}`;
+                                        navigator.clipboard.writeText(shareUrl);
+                                        setCopiedField(`share-${product.id}`);
+                                        setTimeout(() => setCopiedField(null), 2000);
+                                      }}
+                                      className="flex-1 py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
+                                    >
+                                      {copiedField === `share-${product.id}` ? (
+                                        <><Check size={14} className="text-emerald-500" /> Copied</>
+                                      ) : (
+                                        <><Share2 size={14} /> Share</>
+                                      )}
+                                    </button>
+                                  </div>
+                                  <button 
+                                    onClick={() => copyToClipboard(`<script src="${window.location.origin}/embed.js" async></script>\n<div data-nopaymentgateway-id="${product.id}"></div>`, product.id)}
+                                    className="w-full py-2 bg-zinc-50 hover:bg-zinc-100 border border-black/[0.03] rounded-xl text-[10px] font-bold text-zinc-500 flex items-center justify-center gap-2 transition-all"
+                                  >
+                                    {copiedField === product.id ? <Check size={12} className="text-brand-500" /> : <Copy size={12} />}
+                                    {copiedField === product.id ? 'Copied!' : 'Copy Embed Code'}
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
                         </div>
-                      </div>
-                      <div className="p-6 flex-1 flex flex-col">
-                        <div className="flex items-start justify-between gap-4 mb-4">
-                          <div>
-                            <h3 className="font-display font-bold text-zinc-900 text-lg leading-tight">{product.data.itemName}</h3>
-                            <p className="text-sm text-zinc-500 mt-1">{product.data.currency} {product.data.amount}</p>
-                          </div>
-                          <div className="px-2 py-1 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded-md border border-brand-100">
-                            Active
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-3 mt-auto">
-                          <button 
-                            onClick={() => copyToClipboard(`<script src="${window.location.origin}/embed.js" async></script>\n<div data-pixelpay-id="${product.id}"></div>`, product.id)}
-                            className="w-full py-3 bg-zinc-50 hover:bg-zinc-100 border border-black/[0.03] rounded-xl text-xs font-bold text-zinc-600 flex items-center justify-center gap-2 transition-all"
-                          >
-                            {copiedField === product.id ? <Check size={14} className="text-brand-500" /> : <Copy size={14} />}
-                            {copiedField === product.id ? 'Copied!' : 'Copy Embed Code'}
-                          </button>
-                          <button 
-                            onClick={() => {
-                              setTestProductId(product.id);
-                              navigate('/playground');
-                            }}
-                            className="w-full py-3 bg-ink text-white rounded-xl text-xs font-bold hover:bg-zinc-800 flex items-center justify-center gap-2 transition-all"
-                          >
-                            <Play size={14} /> Preview in Playground
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
               )}
             </motion.div>
           )}
@@ -1376,9 +1597,10 @@ function MainApp() {
                       <div className="flex justify-center mb-6">
                         <div className="bg-white p-4 rounded-3xl border border-zinc-100 shadow-xl">
                           <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${checkoutData.methods.upi}&pn=${encodeURIComponent(checkoutData.merchantName)}&am=${checkoutData.amount}&cu=INR`)}`} 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${checkoutData.methods.upi}&pn=${encodeURIComponent(checkoutData.merchantName)}&am=${checkoutData.amount}&cu=${checkoutData.currency}`)}`} 
                             alt="UPI QR Code" 
                             className="w-40 h-40"
+                            referrerPolicy="no-referrer"
                           />
                         </div>
                       </div>
@@ -1487,7 +1709,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
-        <MainApp />
+        <Routes>
+          <Route path="/pay/:productId" element={<MainApp />} />
+          <Route path="/*" element={<MainApp />} />
+        </Routes>
       </ErrorBoundary>
     </BrowserRouter>
   );

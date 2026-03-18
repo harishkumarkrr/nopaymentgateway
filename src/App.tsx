@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Component } from 'react';
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { 
   CreditCard, 
   Code, 
@@ -81,11 +82,8 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
-  constructor(props: {children: React.ReactNode}) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+class ErrorBoundary extends (Component as any) {
+  state = { hasError: false, error: null as Error | null };
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
@@ -116,8 +114,6 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-type Tab = 'dashboard' | 'create' | 'demo' | 'test-embed' | 'docs' | 'professional' | 'contact' | 'terms' | 'privacy';
-
 interface PaymentPayload {
   merchantId: string;
   merchantName: string;
@@ -129,23 +125,36 @@ interface PaymentPayload {
     upi?: string;
     bank?: { account: string; ifsc: string };
     crypto?: { address: string; network: string };
+    stripe?: { key: string; priceId: string };
+    paypal?: { clientId: string };
   };
   createdAt?: any;
 }
 
 function MainApp() {
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Derive activeTab from location.pathname
+  const activeTab = location.pathname.substring(1) || 'dashboard';
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   // Auth State
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
+  useEffect(() => {
+    if (user && location.pathname === '/') {
+      navigate('/dashboard');
+    }
+  }, [user, location.pathname, navigate]);
+
   // Page Content State
   const [pageContent, setPageContent] = useState<{title: string, content: string} | null>(null);
 
   useEffect(() => {
-    if (['dashboard', 'create', 'demo', 'test-embed', 'docs', 'professional', 'contact', 'terms', 'privacy'].includes(activeTab)) {
+    if (['dashboard', 'create', 'playground', 'docs', 'professional', 'contact', 'terms', 'privacy'].includes(activeTab)) {
       setPageContent(null);
       fetch(`/api/${activeTab}`)
         .then(res => res.json())
@@ -167,10 +176,13 @@ function MainApp() {
   const [bankAcc, setBankAcc] = useState('');
   const [bankIfsc, setBankIfsc] = useState('');
   const [cryptoAddress, setCryptoAddress] = useState('');
+  const [stripeKey, setStripeKey] = useState('');
+  const [stripePriceId, setStripePriceId] = useState('');
+  const [paypalClientId, setPaypalClientId] = useState('');
   
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [resultProductId, setResultProductId] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Demo Store State
@@ -180,7 +192,6 @@ function MainApp() {
 
   // Test Embed State
   const [testProductId, setTestProductId] = useState<string>('');
-  const embedContainerRef = useRef<HTMLDivElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -231,34 +242,6 @@ function MainApp() {
     }
   }, [isAuthReady, user]);
 
-  // Effect to load the real embed script in the Test Embed tab
-  useEffect(() => {
-    if (activeTab === 'test-embed' && testProductId && embedContainerRef.current) {
-      // Clear previous
-      embedContainerRef.current.innerHTML = '';
-      
-      // Create the div
-      const div = document.createElement('div');
-      div.setAttribute('data-pixelpay-id', testProductId);
-      embedContainerRef.current.appendChild(div);
-
-      // Load the script dynamically
-      const script = document.createElement('script');
-      script.src = '/embed.js?t=' + new Date().getTime(); // cache buster
-      script.async = true;
-      document.body.appendChild(script);
-
-      return () => {
-        if (document.body.contains(script)) {
-          document.body.removeChild(script);
-        }
-        // Also remove the modal if it was left open
-        const modal = document.getElementById('pixelpay-modal');
-        if (modal) modal.remove();
-      };
-    }
-  }, [activeTab, testProductId]);
-
   // Clear result when form changes
   useEffect(() => {
     setResultProductId(null);
@@ -285,7 +268,7 @@ function MainApp() {
     }
   };
 
-  const handleGenerate = async () => {
+  const handleCreateProduct = async () => {
     if (!user) {
       setError('Please sign in to create a product.');
       return;
@@ -294,7 +277,7 @@ function MainApp() {
       setError('Please upload a product image.');
       return;
     }
-    if (!upiId && !bankAcc && !cryptoAddress) {
+    if (!upiId && !bankAcc && !cryptoAddress && !stripeKey && !paypalClientId) {
       setError('Please provide at least one payment method.');
       return;
     }
@@ -303,7 +286,7 @@ function MainApp() {
       return;
     }
 
-    setIsProcessing(true);
+    setLoading(true);
     setError(null);
 
     try {
@@ -321,6 +304,8 @@ function MainApp() {
       if (upiId) payload.methods.upi = upiId;
       if (bankAcc) payload.methods.bank = { account: bankAcc, ifsc: bankIfsc };
       if (cryptoAddress) payload.methods.crypto = { address: cryptoAddress, network: 'ETH/ERC20' };
+      if (stripeKey) payload.methods.stripe = { key: stripeKey, priceId: stripePriceId };
+      if (paypalClientId) payload.methods.paypal = { clientId: paypalClientId };
 
       const newDocRef = doc(collection(db, 'products'));
       await setDoc(newDocRef, payload);
@@ -335,11 +320,11 @@ function MainApp() {
     } catch (err: any) {
       handleFirestoreError(err, OperationType.CREATE, 'products');
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
       try {
         await deleteDoc(doc(db, 'products', id));
@@ -375,9 +360,9 @@ function MainApp() {
     );
   };
 
-  const NavItem = ({ icon: Icon, label, tab }: { icon: any, label: string, tab: Tab }) => (
+  const NavItem = ({ icon: Icon, label, tab }: { icon: any, label: string, tab: string }) => (
     <button
-      onClick={() => setActiveTab(tab)}
+      onClick={() => navigate('/' + tab)}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
         activeTab === tab 
           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
@@ -399,7 +384,7 @@ function MainApp() {
         {/* Navigation */}
         <nav className="fixed top-0 w-full z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <CreditCard size={18} className="text-zinc-900" />
               </div>
@@ -437,7 +422,7 @@ function MainApp() {
                 <button onClick={loginWithGoogle} className="w-full sm:w-auto px-8 py-4 bg-black text-white rounded-full font-bold text-sm hover:bg-zinc-800 transition-all flex items-center justify-center gap-2">
                   Start Processing <ArrowRight size={16} />
                 </button>
-                <button onClick={loginWithGoogle} className="w-full sm:w-auto px-8 py-4 bg-black/5 text-zinc-900 border border-black/10 rounded-full font-bold text-sm hover:bg-black/10 transition-all flex items-center justify-center gap-2">
+                <button onClick={() => navigate('/docs')} className="w-full sm:w-auto px-8 py-4 bg-black/5 text-zinc-900 border border-black/10 rounded-full font-bold text-sm hover:bg-black/10 transition-all flex items-center justify-center gap-2">
                   <Code size={16} /> View Documentation
                 </button>
               </div>
@@ -479,10 +464,10 @@ function MainApp() {
               <span className="font-bold text-sm tracking-tight">PixelPay</span>
             </div>
             <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-zinc-500">
-              <button onClick={() => setActiveTab('professional')} className="hover:text-emerald-400 transition-colors">Professional</button>
-              <button onClick={() => setActiveTab('contact')} className="hover:text-emerald-400 transition-colors">Contact</button>
-              <button onClick={() => setActiveTab('terms')} className="hover:text-emerald-400 transition-colors">Terms & Conditions</button>
-              <button onClick={() => setActiveTab('privacy')} className="hover:text-emerald-400 transition-colors">Privacy Policy</button>
+              <Link to="/professional" className="hover:text-emerald-400 transition-colors">Professional</Link>
+              <Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link>
+              <Link to="/terms" className="hover:text-emerald-400 transition-colors">Terms & Conditions</Link>
+              <Link to="/privacy" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link>
             </div>
             <p className="text-xs text-zinc-400">© 2026 PixelPay. All rights reserved.</p>
           </div>
@@ -503,7 +488,7 @@ function MainApp() {
             className="w-[280px] border-r border-black/10 bg-zinc-50 flex flex-col z-20 absolute md:relative h-full"
           >
             <div className="p-6 flex items-center justify-between">
-              <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+              <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                   <CreditCard size={18} className="text-zinc-900" />
                 </div>
@@ -519,8 +504,7 @@ function MainApp() {
                 <>
                   <NavItem icon={LayoutDashboard} label="Dashboard" tab="dashboard" />
                   <NavItem icon={ImageIcon} label="Create Product" tab="create" />
-                  <NavItem icon={ShoppingBag} label="Storefront Demo" tab="demo" />
-                  <NavItem icon={Play} label="Live Embed Tester" tab="test-embed" />
+                  <NavItem icon={Play} label="Playground" tab="playground" />
                   <NavItem icon={Code} label="Integration & API" tab="docs" />
                 </>
               )}
@@ -570,10 +554,9 @@ function MainApp() {
                 <Menu size={20} />
               </button>
             )}
-            <h1 className="font-medium text-zinc-900 capitalize">
+            <h1 className="font-display font-bold text-zinc-900 text-xl">
               {activeTab === 'create' ? 'Create Product' : 
-               activeTab === 'demo' ? 'Live Storefront Demo' : 
-               activeTab === 'test-embed' ? 'Live Embed Tester' : 
+               activeTab === 'playground' ? 'Playground' : 
                activeTab === 'professional' ? 'Professional' :
                activeTab === 'contact' ? 'Contact' :
                activeTab === 'terms' ? 'Terms & Conditions' :
@@ -593,61 +576,86 @@ function MainApp() {
           
           {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
               
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-zinc-900">Your Products</h2>
-                <button onClick={() => setActiveTab('create')} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-500 transition-colors flex items-center gap-2">
-                  <ImageIcon size={16} /> New Product
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <h2 className="text-3xl font-display font-bold text-zinc-900">Your Products</h2>
+                  <p className="text-zinc-500 mt-1">Manage your active payment links and embed codes.</p>
+                </div>
+                <button onClick={() => navigate('/create')} className="premium-button premium-button-brand flex items-center gap-2 self-start md:self-auto">
+                  <ImageIcon size={18} /> New Product
                 </button>
               </div>
 
               {products.length === 0 ? (
-                <div className="bg-white border border-black/5 rounded-3xl p-12 text-center">
-                  <ShoppingBag size={48} className="text-zinc-700 mx-auto mb-4" />
-                  <h3 className="text-xl font-medium text-zinc-900 mb-2">No Products Yet</h3>
-                  <p className="text-zinc-500 mb-6">Create your first product to get your embed code.</p>
-                  <button onClick={() => setActiveTab('create')} className="bg-black/10 text-zinc-900 px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-black/20 transition-colors">
-                    Create Product
+                <div className="premium-card p-20 text-center">
+                  <div className="w-20 h-20 bg-zinc-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-black/[0.03]">
+                    <ShoppingBag size={32} className="text-zinc-300" />
+                  </div>
+                  <h3 className="text-2xl font-display font-bold text-zinc-900 mb-3">Ready to start selling?</h3>
+                  <p className="text-zinc-500 mb-10 max-w-md mx-auto">Create your first product to get your unique checkout link and embed code. It only takes 30 seconds.</p>
+                  <button onClick={() => navigate('/create')} className="premium-button premium-button-primary">
+                    Create Your First Product
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {products.map((product) => (
-                    <div key={product.id} className="bg-white border border-black/5 rounded-2xl overflow-hidden group">
-                      <div className="aspect-video w-full relative overflow-hidden bg-black">
-                        <img src={product.data.coverImage} alt={product.data.itemName} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <motion.div 
+                      layout
+                      key={product.id} 
+                      className="premium-card group overflow-hidden flex flex-col"
+                    >
+                      <div className="aspect-square relative overflow-hidden bg-zinc-50">
+                        <img 
+                          src={product.data.coverImage} 
+                          alt={product.data.itemName} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        />
+                        <div className="absolute top-4 right-4 flex gap-2">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(product.id);
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-black/5 flex items-center justify-center text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-6 flex-1 flex flex-col">
+                        <div className="flex items-start justify-between gap-4 mb-4">
+                          <div>
+                            <h3 className="font-display font-bold text-zinc-900 text-lg leading-tight">{product.data.itemName}</h3>
+                            <p className="text-sm text-zinc-500 mt-1">{product.data.currency} {product.data.amount}</p>
+                          </div>
+                          <div className="px-2 py-1 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded-md border border-brand-100">
+                            Active
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3 mt-auto">
+                          <button 
+                            onClick={() => copyToClipboard(`<script src="${window.location.origin}/embed.js" async></script>\n<div data-pixelpay-id="${product.id}"></div>`, product.id)}
+                            className="w-full py-3 bg-zinc-50 hover:bg-zinc-100 border border-black/[0.03] rounded-xl text-xs font-bold text-zinc-600 flex items-center justify-center gap-2 transition-all"
+                          >
+                            {copiedField === product.id ? <Check size={14} className="text-brand-500" /> : <Copy size={14} />}
+                            {copiedField === product.id ? 'Copied!' : 'Copy Embed Code'}
+                          </button>
                           <button 
                             onClick={() => {
-                              setResultProductId(product.id);
-                              setActiveTab('create');
+                              setTestProductId(product.id);
+                              navigate('/playground');
                             }}
-                            className="bg-emerald-600 text-white p-2 rounded-lg hover:bg-emerald-500"
-                            title="Get Embed Code"
+                            className="w-full py-3 bg-ink text-white rounded-xl text-xs font-bold hover:bg-zinc-800 flex items-center justify-center gap-2 transition-all"
                           >
-                            <Code size={18} />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteProduct(product.id)}
-                            className="bg-red-500/20 text-red-400 p-2 rounded-lg hover:bg-red-500/40"
-                            title="Delete Product"
-                          >
-                            <Trash2 size={18} />
+                            <Play size={14} /> Preview in Playground
                           </button>
                         </div>
                       </div>
-                      <div className="p-5">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-bold text-zinc-900 truncate pr-4">{product.data.itemName}</h3>
-                          <span className="font-mono text-emerald-400 font-medium">
-                            {product.data.currency === 'USD' ? '$' : product.data.currency === 'EUR' ? '€' : product.data.currency === 'INR' ? '₹' : ''}
-                            {product.data.amount}
-                          </span>
-                        </div>
-                        <p className="text-xs text-zinc-500 font-mono truncate">ID: {product.id}</p>
-                      </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               )}
@@ -656,274 +664,327 @@ function MainApp() {
 
           {/* CREATE TAB */}
           {activeTab === 'create' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+              <div className="premium-card p-10">
               
-              {/* Form Column */}
-              <div className="lg:col-span-7 space-y-6">
-                <div className="bg-white border border-black/5 rounded-3xl p-6 md:p-8">
-                  <h3 className="text-lg font-medium text-zinc-900 mb-6 flex items-center gap-2">
-                    <ShoppingBag size={20} className="text-emerald-400" />
-                    Product Details
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2 col-span-2 md:col-span-1">
-                      <label className="text-xs font-medium text-zinc-500">Merchant / Store Name</label>
-                      <input
-                        type="text"
-                        value={merchantName}
-                        onChange={(e) => setMerchantName(e.target.value)}
-                        className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                      />
-                    </div>
-                    <div className="space-y-2 col-span-2 md:col-span-1">
-                      <label className="text-xs font-medium text-zinc-500">Product Name</label>
-                      <input
-                        type="text"
-                        value={itemName}
-                        onChange={(e) => setItemName(e.target.value)}
-                        className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-zinc-500">Amount</label>
-                      <input
-                        type="number"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-zinc-500">Currency</label>
-                      <select
-                        value={currency}
-                        onChange={(e) => setCurrency(e.target.value)}
-                        className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none"
-                      >
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="INR">INR (₹)</option>
-                        <option value="GBP">GBP (£)</option>
-                      </select>
-                    </div>
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="w-12 h-12 bg-brand-50 rounded-2xl flex items-center justify-center border border-brand-100">
+                    <ShoppingBag size={24} className="text-brand-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-display font-bold text-zinc-900">Create New Product</h2>
+                    <p className="text-sm text-zinc-500">Define your product details and payment routing.</p>
                   </div>
                 </div>
 
-                <div className="bg-white border border-black/5 rounded-3xl p-6 md:p-8">
-                  <h3 className="text-lg font-medium text-zinc-900 mb-6 flex items-center gap-2">
-                    <Wallet size={20} className="text-emerald-400" />
-                    Payment Routing (Fill at least one)
-                  </h3>
-                  
-                  <div className="space-y-6">
-                    {/* UPI */}
-                    <div className="p-4 rounded-2xl bg-zinc-50 border border-black/5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Smartphone size={16} className="text-emerald-400" />
-                        <span className="text-sm font-medium text-zinc-800">UPI (India)</span>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                  <div className="space-y-8">
+                    <div className="space-y-6">
+                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+                        Basic Information
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-zinc-500 ml-1">Merchant / Store Name</label>
+                          <input
+                            type="text"
+                            value={merchantName}
+                            onChange={(e) => setMerchantName(e.target.value)}
+                            placeholder="e.g. PixelPay Store"
+                            className="w-full px-5 py-4 bg-zinc-50 border border-black/[0.03] rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-zinc-500 ml-1">Product Name</label>
+                          <input
+                            type="text"
+                            value={itemName}
+                            onChange={(e) => setItemName(e.target.value)}
+                            placeholder="e.g. Premium SaaS Subscription"
+                            className="w-full px-5 py-4 bg-zinc-50 border border-black/[0.03] rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-zinc-500 ml-1">Amount</label>
+                            <input
+                              type="number"
+                              value={amount}
+                              onChange={(e) => setAmount(e.target.value)}
+                              placeholder="0.00"
+                              className="w-full px-5 py-4 bg-zinc-50 border border-black/[0.03] rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-zinc-500 ml-1">Currency</label>
+                            <select
+                              value={currency}
+                              onChange={(e) => setCurrency(e.target.value)}
+                              className="w-full px-5 py-4 bg-zinc-50 border border-black/[0.03] rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium appearance-none"
+                            >
+                              <option value="USD">USD ($)</option>
+                              <option value="EUR">EUR (€)</option>
+                              <option value="INR">INR (₹)</option>
+                              <option value="GBP">GBP (£)</option>
+                            </select>
+                          </div>
+                        </div>
                       </div>
-                      <input
-                        type="text"
-                        placeholder="merchant@upi"
-                        value={upiId}
-                        onChange={(e) => setUpiId(e.target.value)}
-                        className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                      />
-                    </div>
 
-                    {/* Bank */}
-                    <div className="p-4 rounded-2xl bg-zinc-50 border border-black/5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Building2 size={16} className="text-blue-400" />
-                        <span className="text-sm font-medium text-zinc-800">Bank Transfer (Wire/ACH)</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          placeholder="Account Number / IBAN"
-                          value={bankAcc}
-                          onChange={(e) => setBankAcc(e.target.value)}
-                          className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Routing / IFSC / SWIFT"
-                          value={bankIfsc}
-                          onChange={(e) => setBankIfsc(e.target.value)}
-                          className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                        />
-                      </div>
-                    </div>
+                      <div className="space-y-8">
+                    <div className="space-y-6">
+                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+                        Payment Routing
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-4">
+                          <div className="flex items-center gap-3">
+                            <Smartphone size={18} className="text-brand-500" />
+                            <span className="text-sm font-bold text-zinc-800">UPI (India)</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="merchant@upi"
+                            value={upiId}
+                            onChange={(e) => setUpiId(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
+                          />
+                        </div>
 
-                    {/* Crypto */}
-                    <div className="p-4 rounded-2xl bg-zinc-50 border border-black/5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Code size={16} className="text-teal-400" />
-                        <span className="text-sm font-medium text-zinc-800">Cryptocurrency (ERC20/ETH)</span>
+                        <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-4">
+                          <div className="flex items-center gap-3">
+                            <CreditCard size={18} className="text-brand-500" />
+                            <span className="text-sm font-bold text-zinc-800">Stripe (Global)</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Stripe Public Key"
+                            value={stripeKey}
+                            onChange={(e) => setStripeKey(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm mb-2"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Stripe Price ID"
+                            value={stripePriceId}
+                            onChange={(e) => setStripePriceId(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
+                          />
+                        </div>
+
+                        <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-4">
+                          <div className="flex items-center gap-3">
+                            <Wallet size={18} className="text-brand-500" />
+                            <span className="text-sm font-bold text-zinc-800">PayPal (Global)</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="PayPal Client ID"
+                            value={paypalClientId}
+                            onChange={(e) => setPaypalClientId(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
+                          />
+                        </div>
                       </div>
-                      <input
-                        type="text"
-                        placeholder="0x..."
-                        value={cryptoAddress}
-                        onChange={(e) => setCryptoAddress(e.target.value)}
-                        className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                      />
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Image & Action Column */}
-              <div className="lg:col-span-5 space-y-6">
-                <div className="bg-white border border-black/5 rounded-3xl p-6 md:p-8 sticky top-24">
-                  <h3 className="text-lg font-medium text-zinc-900 mb-4 flex items-center gap-2">
-                    <ImageIcon size={20} className="text-emerald-400" />
-                    Product Image
-                  </h3>
-                  
-                  <div 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-black/10 rounded-2xl p-8 text-center cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group mb-6"
+            <div className="mt-12 pt-8 border-t border-black/[0.03]">
+                  <button 
+                    onClick={handleCreateProduct}
+                    disabled={loading}
+                    className="w-full premium-button premium-button-brand py-5 text-base"
                   >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleImageUpload}
-                      accept="image/png, image/jpeg"
-                      className="hidden"
-                    />
-                    {coverImage ? (
-                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-black">
-                        <img src={coverImage} alt="Preview" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <p className="text-sm font-medium text-zinc-900">Change Image</p>
-                        </div>
+                    {loading ? (
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Generating Code...
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-3 py-10">
-                        <div className="w-14 h-14 rounded-full bg-black/5 flex items-center justify-center text-zinc-500 group-hover:text-emerald-400 group-hover:scale-110 transition-all">
-                          <Upload size={24} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-zinc-600">Upload product photo</p>
-                          <p className="text-xs text-zinc-500 mt-1">Max 500KB</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {error && (
-                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6 flex items-start gap-2">
-                      <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                      <p>{error}</p>
-                    </div>
-                  )}
-
-                  <button
-                    disabled={!coverImage || isProcessing}
-                    onClick={handleGenerate}
-                    className={`w-full py-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
-                      (!coverImage || isProcessing)
-                        ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
-                        : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.3)]'
-                    }`}
-                  >
-                    {isProcessing ? (
-                      <div className="w-5 h-5 border-2 border-black/20 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <Code size={18} /> Save & Get Embed Code
-                      </>
-                    )}
+                    ) : 'Generate Payment Link & Embed Code'}
                   </button>
+                </div>
 
-                  {resultProductId && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 pt-6 border-t border-black/10 space-y-4">
-                      <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                        <h4 className="text-emerald-400 font-bold flex items-center gap-2 mb-2"><CheckCircle2 size={18}/> Ready to Embed</h4>
-                        <p className="text-sm text-emerald-200/70 mb-4">Your product is saved securely. Copy the code below to add it to your site.</p>
-                        
-                        <div className="relative">
-                          <pre className="bg-zinc-100 border border-black/10 rounded-xl p-4 overflow-x-auto text-xs font-mono text-zinc-800">
-                            {`<script src="${window.location.origin}/embed.js" async></script>\n<div \n  data-pixelpay-id="${resultProductId}" \n></div>`}
+                {resultProductId && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }} 
+                    animate={{ opacity: 1, scale: 1 }} 
+                    className="mt-10 p-8 bg-brand-50 rounded-3xl border border-brand-100 space-y-6"
+                  >
+                    <div className="flex items-center gap-3 text-brand-700 font-bold">
+                      <CheckCircle2 size={20} />
+                      Product Created Successfully!
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase text-brand-600/60 ml-1">Embed Code</label>
+                        <div className="relative group">
+                          <pre className="bg-white border border-brand-200 p-4 rounded-2xl text-[11px] font-mono text-zinc-700 overflow-x-auto">
+                            {`<script src="${window.location.origin}/embed.js" async></script>\n<div data-pixelpay-id="${resultProductId}"></div>`}
                           </pre>
                           <button 
-                            onClick={() => copyToClipboard(`<script src="${window.location.origin}/embed.js" async></script>\n<div data-pixelpay-id="${resultProductId}"></div>`, 'embed_create')}
-                            className="absolute top-2 right-2 p-2 bg-black/10 hover:bg-black/20 rounded-lg text-zinc-600 transition-colors"
+                            onClick={() => copyToClipboard(`<script src="${window.location.origin}/embed.js" async></script>\n<div data-pixelpay-id="${resultProductId}"></div>`, 'embed')}
+                            className="absolute right-3 top-3 p-2 bg-brand-50 text-brand-600 rounded-xl hover:bg-brand-100 transition-all opacity-0 group-hover:opacity-100"
                           >
-                            {copiedField === 'embed_create' ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                            {copiedField === 'embed' ? <Check size={16} /> : <Copy size={16} />}
                           </button>
                         </div>
                       </div>
-                      <button onClick={() => setActiveTab('demo')} className="w-full py-3 bg-black/5 hover:bg-black/10 text-zinc-900 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
-                        <ShoppingBag size={16} /> Test in Demo Store
-                      </button>
-                    </motion.div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
+                    </div>
 
-          {/* DEMO STORE TAB */}
-          {activeTab === 'demo' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={() => navigate('/dashboard')}
+                        className="flex-1 py-4 bg-white border border-brand-200 text-brand-700 rounded-2xl text-sm font-bold hover:bg-brand-50 transition-all"
+                      >
+                        Back to Dashboard
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setTestProductId(resultProductId);
+                          navigate('/playground');
+                        }}
+                        className="flex-1 py-4 bg-brand-600 text-white rounded-2xl text-sm font-bold hover:bg-brand-700 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Play size={16} /> Test in Playground
+                      </button>
+                    </div>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+                  {/* PLAYGROUND TAB */}
+          {activeTab === 'playground' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
               
               {products.length === 0 ? (
-                <div className="text-center py-20">
-                  <ShoppingBag size={48} className="text-zinc-700 mx-auto mb-4" />
-                  <h3 className="text-xl font-medium text-zinc-900 mb-2">No Products Available</h3>
-                  <p className="text-zinc-500 mb-6">Go to the Create tab to add your first product.</p>
-                  <button onClick={() => setActiveTab('create')} className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium">
-                    Create Product
+                <div className="premium-card p-12 text-center max-w-2xl mx-auto">
+                  <Play size={48} className="text-zinc-300 mx-auto mb-6" />
+                  <h3 className="text-2xl font-display font-bold text-zinc-900 mb-3">No Products to Test</h3>
+                  <p className="text-zinc-500 mb-8">Create your first product to see it in action here. You can preview both the hosted storefront and the embedded checkout experience.</p>
+                  <button onClick={() => navigate('/create')} className="premium-button premium-button-brand">
+                    Create Your First Product
                   </button>
                 </div>
               ) : (
-                <div className="space-y-8">
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3">
-                    <CheckCircle2 size={20} className="text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-bold text-emerald-300 mb-1">Live Storefront Simulation</h4>
-                      <p className="text-xs text-emerald-200/70">Below is a simulation of how your products will look and function on your website. Click a product to experience the customer checkout flow.</p>
+                <div className="grid lg:grid-cols-2 gap-10">
+                  {/* Storefront Preview */}
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-display font-bold text-zinc-900">Hosted Storefront</h3>
+                      <div className="px-3 py-1 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-brand-100">
+                        Live Preview
+                      </div>
+                    </div>
+                    
+                    <div className="premium-card overflow-hidden bg-zinc-50 border-black/[0.05]">
+                      <div className="bg-zinc-100/50 border-b border-black/[0.05] px-4 py-3 flex items-center gap-2">
+                        <div className="flex gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-zinc-300"></div>
+                          <div className="w-2.5 h-2.5 rounded-full bg-zinc-300"></div>
+                          <div className="w-2.5 h-2.5 rounded-full bg-zinc-300"></div>
+                        </div>
+                        <div className="mx-auto bg-white border border-black/[0.05] rounded-full px-4 py-1 text-[10px] text-zinc-400 font-mono flex items-center gap-2">
+                          <Lock size={10} /> pixelpay.io/s/{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}
+                        </div>
+                      </div>
+
+                      <div className="p-8 grid grid-cols-1 sm:grid-cols-2 gap-6 max-h-[600px] overflow-y-auto">
+                        {products.map((product) => (
+                          <div key={product.id} className="group cursor-pointer" onClick={() => handleImageClick(product.data)}>
+                            <div className="relative overflow-hidden rounded-2xl mb-4 bg-white aspect-square shadow-sm border border-black/[0.03]">
+                              <img 
+                                src={product.data.coverImage} 
+                                alt={product.data.itemName} 
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brand-600 shadow-xl scale-90 group-hover:scale-100 transition-transform">
+                                  <ShoppingBag size={18} />
+                                </div>
+                              </div>
+                            </div>
+                            <h4 className="text-sm font-bold text-zinc-900 mb-1 group-hover:text-brand-600 transition-colors">{product.data.itemName}</h4>
+                            <p className="text-xs font-bold text-brand-600">
+                              {product.data.currency === 'USD' ? '$' : product.data.currency === 'EUR' ? '€' : product.data.currency === 'INR' ? '₹' : ''}{product.data.amount}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Mock E-commerce Site */}
-                  <div className="bg-white rounded-[2rem] overflow-hidden shadow-2xl">
-                    {/* Mock Browser Chrome */}
-                    <div className="bg-zinc-100 border-b border-zinc-200 px-4 py-3 flex items-center gap-2">
-                      <div className="flex gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                        <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                        <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
-                      </div>
-                      <div className="mx-auto bg-white border border-zinc-200 rounded-md px-3 py-1 text-[10px] text-zinc-500 font-mono flex items-center gap-2">
-                        <Lock size={10} /> https://{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}.com/shop
+                  {/* Embed Tester */}
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-display font-bold text-zinc-900">Live Embed Tester</h3>
+                      <div className="px-3 py-1 bg-zinc-100 text-zinc-500 text-[10px] font-bold uppercase tracking-wider rounded-full border border-black/[0.05]">
+                        Interactive
                       </div>
                     </div>
 
-                    {/* Mock Store Content */}
-                    <div className="bg-white p-8 md:p-12 text-zinc-900 grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {products.map((product) => (
-                        <div key={product.id} className="group cursor-pointer" onClick={() => handleImageClick(product.data)}>
-                          <div className="relative overflow-hidden rounded-2xl mb-4 bg-zinc-100 aspect-square">
-                            <img 
-                              src={product.data.coverImage} 
-                              alt={product.data.itemName} 
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" 
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center">
-                              <div className="opacity-0 group-hover:opacity-100 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg text-sm font-bold text-emerald-600 flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-all">
-                                <CreditCard size={16} /> Click to Buy
-                              </div>
-                            </div>
-                          </div>
-                          <h2 className="text-xl font-black tracking-tight mb-1">{product.data.itemName}</h2>
-                          <p className="text-lg font-medium text-zinc-500">
-                            {product.data.currency === 'USD' ? '$' : product.data.currency === 'EUR' ? '€' : product.data.currency === 'INR' ? '₹' : '£'}{product.data.amount}
-                          </p>
+                    <div className="premium-card p-8 space-y-8">
+                      <div className="space-y-4">
+                        <label className="text-xs font-bold text-zinc-500 ml-1">Select Product to Test</label>
+                        <select 
+                          value={testProductId} 
+                          onChange={(e) => setTestProductId(e.target.value)}
+                          className="w-full px-5 py-4 bg-zinc-50 border border-black/[0.03] rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium appearance-none"
+                        >
+                          <option value="">Choose a product...</option>
+                          {products.map(p => (
+                            <option key={p.id} value={p.id}>{p.data.itemName}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="p-8 rounded-3xl bg-zinc-50 border border-black/[0.03] text-center space-y-6">
+                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-black/[0.03]">
+                          <Code size={24} className="text-brand-500" />
                         </div>
-                      ))}
+                        <div>
+                          <h4 className="text-lg font-bold text-zinc-900 mb-2">Test the Overlay</h4>
+                          <p className="text-sm text-zinc-500">Click the button below to trigger the PixelPay checkout overlay just as it would appear on your website.</p>
+                        </div>
+                        <button 
+                          disabled={!testProductId}
+                          onClick={() => {
+                            const product = products.find(p => p.id === testProductId);
+                            if (product) handleImageClick(product.data);
+                          }}
+                          className={`w-full py-4 rounded-2xl font-bold transition-all ${
+                            !testProductId 
+                              ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' 
+                              : 'bg-brand-600 text-white hover:bg-brand-700 shadow-lg shadow-brand-600/20'
+                          }`}
+                        >
+                          Launch Checkout Overlay
+                        </button>
+                      </div>
+
+                      <div className="pt-6 border-t border-black/[0.03] space-y-4">
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                          <CheckCircle2 size={14} className="text-brand-500" />
+                          Features Tested
+                        </div>
+                        <ul className="grid grid-cols-2 gap-3">
+                          {['Responsive UI', 'Payment Routing', 'Dynamic Pricing', 'Success Callback'].map((f) => (
+                            <li key={f} className="flex items-center gap-2 text-xs text-zinc-500">
+                              <div className="w-1 h-1 rounded-full bg-brand-500" />
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -931,73 +992,37 @@ function MainApp() {
             </motion.div>
           )}
 
-          {/* LIVE EMBED TESTER TAB */}
-          {activeTab === 'test-embed' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-              <div className="bg-white rounded-3xl p-8 md:p-12 text-center text-black shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
-                <h2 className="text-3xl font-black tracking-tight mb-4">My External Website</h2>
-                <p className="text-zinc-500 mb-8 max-w-lg mx-auto">
-                  This tab simulates your actual external website. It loads the real <code>embed.js</code> script exactly as your customers will see it.
-                </p>
-
-                {products.length === 0 ? (
-                  <div className="p-6 bg-zinc-100 rounded-2xl text-zinc-500">
-                    Please create a product first to test the embed.
-                  </div>
-                ) : (
-                  <div className="max-w-md mx-auto">
-                    <div className="mb-8 text-left">
-                      <label className="block text-sm font-bold text-zinc-700 mb-2">Select Product to Test:</label>
-                      <select 
-                        value={testProductId}
-                        onChange={(e) => setTestProductId(e.target.value)}
-                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 px-4 text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      >
-                        {products.map(p => (
-                          <option key={p.id} value={p.id}>{p.data.itemName} - {p.data.currency} {p.data.amount}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="p-8 bg-zinc-50 border border-zinc-200 rounded-3xl">
-                      <h3 className="text-lg font-bold text-zinc-900 mb-6">Featured Product</h3>
-                      
-                      {/* THIS IS WHERE THE REAL EMBED SCRIPT INJECTS THE UI */}
-                      <div ref={embedContainerRef} className="mx-auto max-w-[250px] min-h-[200px] flex items-center justify-center">
-                        <div className="animate-pulse text-zinc-500 text-sm">Loading embed...</div>
-                      </div>
-
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
           {/* DOCS TAB */}
           {activeTab === 'docs' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-8">
-              <div className="bg-white border border-black/5 rounded-3xl p-8">
-                <h2 className="text-2xl font-bold text-zinc-900 mb-6 flex items-center gap-3">
-                  <Terminal size={24} className="text-emerald-400" />
-                  Integration Guide
-                </h2>
+              <div className="premium-card p-10">
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="w-12 h-12 bg-brand-50 rounded-2xl flex items-center justify-center border border-brand-100">
+                    <Terminal size={24} className="text-brand-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-display font-bold text-zinc-900">Integration Guide</h2>
+                    <p className="text-sm text-zinc-500">How to add PixelPay to your website.</p>
+                  </div>
+                </div>
                 
-                <div className="space-y-8">
-                  <section>
-                    <h3 className="text-lg font-medium text-zinc-900 mb-3">1. Create a Product</h3>
-                    <p className="text-zinc-500 text-sm mb-4">Use the Create tab to upload your product image and set your payment details. PixelPay will securely host this data.</p>
+                <div className="space-y-12">
+                  <section className="relative pl-10">
+                    <div className="absolute left-0 top-0 w-8 h-8 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                    <h3 className="text-lg font-bold text-zinc-900 mb-3">Create a Product</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Use the <span className="text-brand-600 font-bold cursor-pointer hover:underline" onClick={() => navigate('/create')}>Create</span> tab to define your product details and set your payment routing. PixelPay will securely host this data on the decentralized protocol.</p>
                   </section>
 
-                  <section>
-                    <h3 className="text-lg font-medium text-zinc-900 mb-3">2. Copy the Embed Code</h3>
-                    <p className="text-zinc-500 text-sm mb-4">Once saved, copy the provided HTML snippet. It contains a lightweight script and a div tag with your unique product ID.</p>
+                  <section className="relative pl-10">
+                    <div className="absolute left-0 top-0 w-8 h-8 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                    <h3 className="text-lg font-bold text-zinc-900 mb-3">Copy the Embed Code</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Once saved, copy the provided HTML snippet. It contains a lightweight 2KB script and a div tag with your unique product ID. This script handles all the complex logic for you.</p>
                   </section>
 
-                  <section>
-                    <h3 className="text-lg font-medium text-zinc-900 mb-3">3. Paste into your Website</h3>
-                    <p className="text-zinc-500 text-sm mb-4">Paste the snippet into your Shopify, WordPress, Webflow, or custom React app. The script will automatically fetch the product data and render an interactive checkout button.</p>
+                  <section className="relative pl-10">
+                    <div className="absolute left-0 top-0 w-8 h-8 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                    <h3 className="text-lg font-bold text-zinc-900 mb-3">Paste into your Website</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Paste the snippet into your Shopify, WordPress, Webflow, or custom React app. The script will automatically fetch the product data and render an interactive checkout button that launches our secure overlay.</p>
                   </section>
                 </div>
               </div>
@@ -1006,17 +1031,18 @@ function MainApp() {
 
           {['professional', 'contact', 'terms', 'privacy'].includes(activeTab) && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-8">
-              <div className="bg-white border border-black/5 rounded-3xl p-8">
+              <div className="premium-card p-10">
                 {pageContent ? (
                   <>
-                    <h2 className="text-2xl font-bold text-zinc-900 mb-6">{pageContent.title}</h2>
-                    <div className="text-zinc-600 leading-relaxed whitespace-pre-wrap">
+                    <h2 className="text-3xl font-display font-bold text-zinc-900 mb-8">{pageContent.title}</h2>
+                    <div className="text-zinc-600 leading-relaxed whitespace-pre-wrap font-medium">
                       {pageContent.content}
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center justify-center py-12 text-zinc-500">
-                    Loading content...
+                  <div className="flex flex-col items-center justify-center py-20 text-zinc-400 gap-4">
+                    <div className="w-10 h-10 border-2 border-brand-100 border-t-brand-600 rounded-full animate-spin" />
+                    <p className="text-sm font-bold uppercase tracking-widest">Loading Content...</p>
                   </div>
                 )}
               </div>
@@ -1029,144 +1055,123 @@ function MainApp() {
       {/* CUSTOMER CHECKOUT MODAL (Simulated) */}
       <AnimatePresence>
         {isCheckoutOpen && checkoutData && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsCheckoutOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-zinc-900/80 backdrop-blur-md"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-3xl w-full max-w-md relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+              className="bg-white rounded-[2.5rem] w-full max-w-md relative z-[101] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-white/20"
             >
               {/* Header */}
-              <div className="bg-zinc-50 px-6 py-5 border-b border-zinc-100 flex items-center justify-between sticky top-0">
+              <div className="bg-zinc-50/50 px-8 py-6 border-b border-zinc-100 flex items-center justify-between sticky top-0 backdrop-blur-md">
                 <div>
-                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Secure Checkout</p>
-                  <h3 className="text-lg font-bold text-zinc-900">{checkoutData.merchantName}</h3>
+                  <p className="text-[10px] font-bold text-brand-600 uppercase tracking-[0.2em] mb-1">Secure Checkout</p>
+                  <h3 className="text-xl font-display font-bold text-zinc-900">{checkoutData.merchantName}</h3>
                 </div>
-                <button onClick={() => setIsCheckoutOpen(false)} className="w-8 h-8 bg-white border border-zinc-200 rounded-full flex items-center justify-center text-zinc-500 hover:bg-zinc-100 transition-colors">
-                  <X size={16} />
+                <button onClick={() => setIsCheckoutOpen(false)} className="w-10 h-10 bg-white border border-zinc-200 rounded-2xl flex items-center justify-center text-zinc-500 hover:bg-zinc-50 transition-all shadow-sm">
+                  <X size={18} />
                 </button>
               </div>
 
               {/* Order Summary */}
-              <div className="px-6 py-6 border-b border-zinc-100">
+              <div className="px-8 py-8 border-b border-zinc-100 bg-white">
                 <div className="flex justify-between items-end mb-2">
-                  <p className="text-zinc-600 font-medium">{checkoutData.itemName}</p>
-                  <p className="text-3xl font-black text-zinc-900">
-                    {checkoutData.currency === 'USD' ? '$' : checkoutData.currency === 'EUR' ? '€' : checkoutData.currency === 'INR' ? '₹' : ''}
-                    {checkoutData.amount}
-                    {['USD','EUR','INR'].includes(checkoutData.currency) ? '' : ` ${checkoutData.currency}`}
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider">Item Name</p>
+                    <p className="text-zinc-900 font-bold text-lg">{checkoutData.itemName}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider">Total Amount</p>
+                    <p className="text-3xl font-display font-bold text-zinc-900">
+                      {checkoutData.currency === 'USD' ? '$' : checkoutData.currency === 'EUR' ? '€' : checkoutData.currency === 'INR' ? '₹' : ''}
+                      {checkoutData.amount}
+                    </p>
+                  </div>
                 </div>
               </div>
 
               {/* Payment Methods */}
-              <div className="px-6 py-6 overflow-y-auto flex-1 bg-zinc-50/50">
-                <p className="text-sm font-bold text-zinc-900 mb-4">Select Payment Method</p>
+              <div className="px-8 py-8 overflow-y-auto flex-1 bg-zinc-50/30">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-6">Select Payment Method</p>
                 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {checkoutData.methods.upi && (
-                    <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                          <Smartphone size={16} className="text-emerald-600" />
+                    <div className="bg-white border border-black/[0.03] rounded-[2rem] p-6 shadow-sm">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                          <Smartphone size={20} className="text-emerald-600" />
                         </div>
                         <h4 className="font-bold text-zinc-900">Pay via UPI</h4>
                       </div>
                       
-                      <div className="flex justify-center mb-4">
-                        <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm">
+                      <div className="flex justify-center mb-6">
+                        <div className="bg-white p-4 rounded-3xl border border-zinc-100 shadow-xl">
                           <img 
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${checkoutData.methods.upi}&pn=${encodeURIComponent(checkoutData.merchantName)}&am=${checkoutData.amount}&cu=INR`)}`} 
                             alt="UPI QR Code" 
-                            className="w-32 h-32"
+                            className="w-40 h-40"
                           />
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between bg-zinc-50 rounded-xl p-3 border border-zinc-100 mb-3">
-                        <code className="text-sm font-mono text-zinc-700">{checkoutData.methods.upi}</code>
+                      <div className="flex items-center justify-between bg-zinc-50 rounded-2xl p-4 border border-black/[0.03] mb-4">
+                        <code className="text-sm font-mono text-zinc-700 font-bold">{checkoutData.methods.upi}</code>
                         <button 
                           onClick={() => copyToClipboard(checkoutData.methods.upi!, 'upi')}
-                          className="text-emerald-600 hover:text-emerald-700 text-sm font-bold flex items-center gap-1"
+                          className="text-brand-600 hover:text-brand-700 text-sm font-bold flex items-center gap-1"
                         >
                           {copiedField === 'upi' ? <Check size={14}/> : <Copy size={14}/>} Copy
                         </button>
                       </div>
                       <a 
                         href={`upi://pay?pa=${checkoutData.methods.upi}&pn=${checkoutData.merchantName}&am=${checkoutData.amount}&cu=INR`}
-                        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center transition-colors"
+                        className="w-full premium-button premium-button-brand py-4 text-sm"
                       >
                         Open UPI App
                       </a>
                     </div>
                   )}
 
-                  {checkoutData.methods.bank && (
-                    <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Building2 size={16} className="text-blue-600" />
+                  {checkoutData.methods.stripe && (
+                    <div className="bg-white border border-black/[0.03] rounded-[2rem] p-6 shadow-sm">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center border border-brand-100">
+                          <CreditCard size={20} className="text-brand-600" />
                         </div>
-                        <h4 className="font-bold text-zinc-900">Bank Transfer</h4>
+                        <h4 className="font-bold text-zinc-900">Pay via Stripe</h4>
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between bg-zinc-50 rounded-xl p-3 border border-zinc-100">
-                          <div>
-                            <p className="text-[10px] font-bold text-zinc-500 uppercase">Account / IBAN</p>
-                            <code className="text-sm font-mono text-zinc-700">{checkoutData.methods.bank.account}</code>
-                          </div>
-                          <button onClick={() => copyToClipboard(checkoutData.methods.bank!.account, 'bank')} className="text-emerald-600">
-                            {copiedField === 'bank' ? <Check size={16}/> : <Copy size={16}/>}
-                          </button>
-                        </div>
-                        <div className="flex items-center justify-between bg-zinc-50 rounded-xl p-3 border border-zinc-100">
-                          <div>
-                            <p className="text-[10px] font-bold text-zinc-500 uppercase">Routing / IFSC</p>
-                            <code className="text-sm font-mono text-zinc-700">{checkoutData.methods.bank.ifsc}</code>
-                          </div>
-                          <button onClick={() => copyToClipboard(checkoutData.methods.bank!.ifsc, 'ifsc')} className="text-emerald-600">
-                            {copiedField === 'ifsc' ? <Check size={16}/> : <Copy size={16}/>}
-                          </button>
-                        </div>
-                      </div>
+                      <button className="w-full premium-button premium-button-brand py-4 text-sm">
+                        Pay with Card
+                      </button>
                     </div>
                   )}
 
-                  {checkoutData.methods.crypto && (
-                    <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-                          <Code size={16} className="text-teal-600" />
+                  {checkoutData.methods.paypal && (
+                    <div className="bg-white border border-black/[0.03] rounded-[2rem] p-6 shadow-sm">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100">
+                          <Wallet size={20} className="text-blue-600" />
                         </div>
-                        <div>
-                          <h4 className="font-bold text-zinc-900">Crypto Transfer</h4>
-                          <p className="text-xs text-zinc-500">{checkoutData.methods.crypto.network}</p>
-                        </div>
+                        <h4 className="font-bold text-zinc-900">Pay via PayPal</h4>
                       </div>
-                      <div className="flex items-center justify-between bg-zinc-50 rounded-xl p-3 border border-zinc-100">
-                        <code className="text-xs font-mono text-zinc-700 truncate mr-2">{checkoutData.methods.crypto.address}</code>
-                        <button 
-                          onClick={() => copyToClipboard(checkoutData.methods.crypto!.address, 'crypto')}
-                          className="text-emerald-600 shrink-0"
-                        >
-                          {copiedField === 'crypto' ? <Check size={16}/> : <Copy size={16}/>}
-                        </button>
-                      </div>
+                      <button className="w-full py-4 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all shadow-lg shadow-blue-600/20 text-sm">
+                        PayPal Checkout
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
               
-              <div className="bg-zinc-100 px-6 py-4 text-center border-t border-zinc-200">
-                <p className="text-xs text-zinc-500 flex items-center justify-center gap-1">
-                  <ShieldCheck size={14} /> Powered by PixelPay Decentralized Protocol
+              <div className="bg-zinc-50 px-8 py-6 text-center border-t border-zinc-100">
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                  <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption by PixelPay
                 </p>
               </div>
             </motion.div>
@@ -1179,8 +1184,10 @@ function MainApp() {
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <MainApp />
-    </ErrorBoundary>
+    <BrowserRouter>
+      <ErrorBoundary>
+        <MainApp />
+      </ErrorBoundary>
+    </BrowserRouter>
   );
 }

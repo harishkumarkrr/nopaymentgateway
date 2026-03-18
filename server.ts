@@ -25,17 +25,10 @@ async function startServer() {
     });
   });
 
-  app.get("/api/demo", (req, res) => {
+  app.get("/api/playground", (req, res) => {
     res.json({
-      title: "Storefront Demo",
-      content: "Experience how your customers see your products. This demo shows a live preview of your hosted storefront."
-    });
-  });
-
-  app.get("/api/test-embed", (req, res) => {
-    res.json({
-      title: "Live Embed Tester",
-      content: "Test your PixelPay integration by embedding your product links into this live preview environment."
+      title: "Playground",
+      content: "Experience your products in a live environment. Preview your hosted storefront and test how your checkout links behave when embedded into external websites."
     });
   });
 

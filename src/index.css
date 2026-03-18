@@ -1,1 +1,51 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  
+  --color-brand-50: #f0fdf4;
+  --color-brand-100: #dcfce7;
+  --color-brand-200: #bbf7d0;
+  --color-brand-300: #86efac;
+  --color-brand-400: #4ade80;
+  --color-brand-500: #22c55e;
+  --color-brand-600: #16a34a;
+  --color-brand-700: #15803d;
+  --color-brand-800: #166534;
+  --color-brand-900: #14532d;
+  --color-brand-950: #052e16;
+
+  --color-ink: #0a0a0a;
+  --color-paper: #fafafa;
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-ink antialiased selection:bg-brand-500/30;
+  }
+}
+
+.glass {
+  @apply bg-white/70 backdrop-blur-xl border border-white/20;
+}
+
+.premium-card {
+  @apply bg-white border border-black/[0.03] shadow-[0_1px_3px_rgba(0,0,0,0.02),0_10px_20px_-5px_rgba(0,0,0,0.03)] rounded-[2rem];
+}
+
+.premium-button {
+  @apply px-6 py-3 rounded-full font-semibold transition-all duration-300 active:scale-95;
+}
+
+.premium-button-primary {
+  @apply bg-ink text-white hover:bg-zinc-800 shadow-lg shadow-black/10;
+}
+
+.premium-button-secondary {
+  @apply bg-white text-ink border border-black/5 hover:bg-zinc-50;
+}
+
+.premium-button-brand {
+  @apply bg-brand-500 text-white hover:bg-brand-600 shadow-lg shadow-brand-500/20;
+}

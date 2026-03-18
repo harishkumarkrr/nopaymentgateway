@@ -1,0 +1,123 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - merchantName: string (optional)
+    //   - createdAt: timestamp (required, immutable)
+    //
+    // Collection: products
+    // Document ID: {productId}
+    // Fields:
+    //   - merchantId: string (required, immutable)
+    //   - merchantName: string (required)
+    //   - itemName: string (required)
+    //   - amount: number (required)
+    //   - currency: string (required)
+    //   - coverImage: string (required)
+    //   - methods: map (optional)
+    //   - createdAt: timestamp (required, immutable)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.merchantId;
+    }
+    
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+    
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+    
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+    
+    function isPositive(field) {
+      return request.resource.data[field] is number && request.resource.data[field] > 0;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    
+    function isValidUser() {
+      return hasRequiredFields(['uid', 'email', 'createdAt']) &&
+             request.resource.data.uid == request.auth.uid &&
+             isValidEmail(request.resource.data.email) &&
+             request.resource.data.createdAt is timestamp &&
+             (!('merchantName' in request.resource.data) || validStringLength('merchantName', 1, 100));
+    }
+    
+    function isValidProduct() {
+      return hasRequiredFields(['merchantId', 'merchantName', 'itemName', 'amount', 'currency', 'coverImage', 'createdAt']) &&
+             request.resource.data.merchantId == request.auth.uid &&
+             validStringLength('merchantName', 1, 100) &&
+             validStringLength('itemName', 1, 200) &&
+             isPositive('amount') &&
+             validStringLength('currency', 3, 3) &&
+             request.resource.data.coverImage is string &&
+             request.resource.data.coverImage.size() < 1048576 && // Max 1MB for base64
+             request.resource.data.createdAt is timestamp &&
+             (!('methods' in request.resource.data) || request.resource.data.methods is map);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser() && uidUnchanged();
+      allow update: if isOwner(userId) && isValidUser() && uidNotModified() && 
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isOwner(userId);
+    }
+
+    match /products/{productId} {
+      // Anyone can read products to render the checkout embed
+      allow read: if true;
+      
+      allow create: if isAuthenticated() && isValidProduct();
+      allow update: if isDocOwner() && isValidProduct() && 
+                    request.resource.data.merchantId == resource.data.merchantId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner();
+    }
+  }
+}

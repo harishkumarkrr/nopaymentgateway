@@ -1,0 +1,5 @@
+{
+  "name": "SteganoPay: Invisible QR Steganography",
+  "description": "Hide UPI links and secret data inside normal images using LSB steganography. Visually identical, digitally encoded.",
+  "requestFramePermissions": ["camera"]
+}

@@ -1,0 +1,10 @@
+{
+  "projectId": "nopaymentgateway",
+  "appId": "1:590110404915:web:8fc2c7e6be118672bace46",
+  "apiKey": "AIzaSyAhZBiJHUMeGiDtewMIsuNfqzwbpVHTG1A",
+  "authDomain": "nopaymentgateway.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "nopaymentgateway.firebasestorage.app",
+  "messagingSenderId": "590110404915",
+  "measurementId": "G-ZJ7PWDX9MD"
+}

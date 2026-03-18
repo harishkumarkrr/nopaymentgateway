@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A merchant account.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique ID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "merchantName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A product created by a merchant for embedding.",
+      "type": "object",
+      "properties": {
+        "merchantId": {
+          "type": "string",
+          "description": "The UID of the merchant who owns this product."
+        },
+        "merchantName": {
+          "type": "string"
+        },
+        "itemName": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "coverImage": {
+          "type": "string",
+          "description": "Base64 encoded image or URL."
+        },
+        "methods": {
+          "type": "object",
+          "properties": {
+            "upi": { "type": "string" },
+            "bank": {
+              "type": "object",
+              "properties": {
+                "account": { "type": "string" },
+                "ifsc": { "type": "string" }
+              }
+            },
+            "crypto": {
+              "type": "object",
+              "properties": {
+                "network": { "type": "string" },
+                "address": { "type": "string" }
+              }
+            }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["merchantId", "merchantName", "itemName", "amount", "currency", "coverImage", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores merchant profiles."
+    },
+    "products/{productId}": {
+      "schema": {
+        "$ref": "#/entities/Product"
+      },
+      "description": "Stores products available for purchase via embed."
+    }
+  }
+}

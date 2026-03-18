@@ -196,7 +196,7 @@ function MainApp() {
     if (['dashboard', 'create', 'playground', 'docs', 'contact', 'terms', 'privacy'].includes(activeTab)) {
       console.log(`Fetching content for tab: ${activeTab}`);
       setPageContent(null);
-      fetch(`/api/${activeTab}`)
+      fetch('/api/' + activeTab)
         .then(async res => {
           if (!res.ok) {
             const text = await res.text();

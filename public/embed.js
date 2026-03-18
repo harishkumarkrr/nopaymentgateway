@@ -1,14 +1,14 @@
 (function() {
-  console.log("PixelPay: Script loaded and initializing...");
+  console.log("NoPaymentGateway.xyz: Script loaded and initializing...");
 
   const PROJECT_ID = "nopaymentgateway";
   const DATABASE_ID = "(default)";
 
   // Inject CSS for hover effects safely
   function injectCSS() {
-    if (document.getElementById('pixelpay-styles')) return;
+    if (document.getElementById('nopaymentgateway-styles')) return;
     const style = document.createElement('style');
-    style.id = 'pixelpay-styles';
+    style.id = 'nopaymentgateway-styles';
     style.textContent = `
       .pixelpay-container {
         display: inline-block;
@@ -84,24 +84,24 @@
 
   async function fetchProduct(productId) {
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents/products/${productId}`;
-    console.log("PixelPay: Fetching product from", url);
+    console.log("NoPaymentGateway.xyz: Fetching product from", url);
     const response = await fetch(url);
     if (!response.ok) {
       const errText = await response.text();
-      console.error("PixelPay: Fetch failed", response.status, errText);
+      console.error("NoPaymentGateway.xyz: Fetch failed", response.status, errText);
       throw new Error(`Product not found or unavailable. Status: ${response.status}`);
     }
     const doc = await response.json();
-    console.log("PixelPay: Raw Firestore doc", doc);
+    console.log("NoPaymentGateway.xyz: Raw Firestore doc", doc);
     return parseFirestoreDocument(doc);
   }
 
   function createModal(data) {
-    const existing = document.getElementById('pixelpay-modal');
+    const existing = document.getElementById('nopaymentgateway-modal');
     if (existing) existing.remove();
 
     const overlay = document.createElement('div');
-    overlay.id = 'pixelpay-modal';
+    overlay.id = 'nopaymentgateway-modal';
     Object.assign(overlay.style, {
       position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
       backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
@@ -128,7 +128,7 @@
         <div style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Secure Checkout</div>
         <div style="font-size: 18px; font-weight: 700; color: #111827; margin: 0;">${data.merchantName || 'Merchant'}</div>
       </div>
-      <button id="pixelpay-close" style="background: white; border: 1px solid #e5e7eb; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 14px; font-weight: bold;">✕</button>
+      <button id="nopaymentgateway-close" style="background: white; border: 1px solid #e5e7eb; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 14px; font-weight: bold;">✕</button>
     `;
 
     // Body
@@ -140,6 +140,7 @@
 
     let methodsHtml = '';
     
+    // UPI First
     if (data.methods && data.methods.upi) {
       const upiString = `upi://pay?pa=${data.methods.upi}&pn=${encodeURIComponent(data.merchantName || 'Merchant')}&am=${data.amount}&cu=INR`;
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
@@ -164,6 +165,7 @@
       `;
     }
 
+    // Bank Transfer Next
     if (data.methods && data.methods.bank) {
       methodsHtml += `
         <div style="border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
@@ -210,7 +212,7 @@
       padding: '16px', backgroundColor: '#f3f4f6', borderTop: '1px solid #e5e7eb',
       textAlign: 'center', fontSize: '12px', color: '#6b7280', fontWeight: '500'
     });
-    footer.innerHTML = '🔒 Secured by PixelPay Hosted Checkout';
+    footer.innerHTML = '🔒 Secured by NoPaymentGateway.xyz Hosted Checkout';
 
     modal.appendChild(header);
     modal.appendChild(body);
@@ -219,7 +221,7 @@
     document.body.appendChild(overlay);
 
     // Events
-    document.getElementById('pixelpay-close').onclick = () => overlay.remove();
+    document.getElementById('nopaymentgateway-close').onclick = () => overlay.remove();
     overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
   }
 
@@ -229,16 +231,16 @@
 
     const productId = container.dataset.pixelpayId;
     if (!productId) {
-      console.warn("PixelPay: Container found but no data-pixelpay-id attribute provided.");
+      console.warn("NoPaymentGateway.xyz: Container found but no data-pixelpay-id attribute provided.");
       return;
     }
 
-    console.log("PixelPay: Initializing container for product", productId);
+    console.log("NoPaymentGateway.xyz: Initializing container for product", productId);
 
     try {
       // Fetch data
       const data = await fetchProduct(productId);
-      console.log("PixelPay: Parsed product data", data);
+      console.log("NoPaymentGateway.xyz: Parsed product data", data);
       
       if (!data.coverImage) {
         throw new Error("Product data is missing a cover image.");
@@ -259,9 +261,9 @@
       });
 
     } catch (err) {
-      console.error("PixelPay Error:", err);
+      console.error("NoPaymentGateway.xyz Error:", err);
       container.innerHTML = `<div style="padding: 20px; border: 1px dashed red; color: red; font-family: sans-serif; font-size: 14px;">
-        <strong>PixelPay Error:</strong><br/>
+        <strong>NoPaymentGateway.xyz Error:</strong><br/>
         ${err.message}
       </div>`;
     }

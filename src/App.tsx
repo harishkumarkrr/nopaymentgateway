@@ -24,7 +24,15 @@ import {
   Lock,
   LogOut,
   Trash2,
-  Play
+  Play,
+  User as UserIcon,
+  ChevronRight,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Shield,
+  Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, loginWithGoogle, logout } from './firebase';
@@ -154,12 +162,28 @@ function MainApp() {
   const [pageContent, setPageContent] = useState<{title: string, content: string} | null>(null);
 
   useEffect(() => {
-    if (['dashboard', 'create', 'playground', 'docs', 'professional', 'contact', 'terms', 'privacy'].includes(activeTab)) {
+    if (['dashboard', 'create', 'playground', 'docs', 'contact', 'terms', 'privacy'].includes(activeTab)) {
+      console.log(`Fetching content for tab: ${activeTab}`);
       setPageContent(null);
       fetch(`/api/${activeTab}`)
-        .then(res => res.json())
-        .then(data => setPageContent(data))
-        .catch(err => console.error(err));
+        .then(async res => {
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`HTTP error! status: ${res.status}, body: ${text.substring(0, 100)}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          console.log(`Successfully loaded content for ${activeTab}`);
+          setPageContent(data);
+        })
+        .catch(err => {
+          console.error(`Failed to fetch content for ${activeTab}:`, err);
+          setPageContent({
+            title: "Error Loading Content",
+            content: "We encountered an issue while loading this page. Please try refreshing or contact support if the problem persists."
+          });
+        });
     }
   }, [activeTab]);
 
@@ -317,6 +341,10 @@ function MainApp() {
       setAmount('120');
       setCoverImage(null);
       
+      // Success feedback
+      alert('Product created successfully! You can now find it in your dashboard.');
+      navigate('/dashboard');
+      
     } catch (err: any) {
       handleFirestoreError(err, OperationType.CREATE, 'products');
     } finally {
@@ -347,7 +375,7 @@ function MainApp() {
   };
 
   const PageHeader = () => {
-    if (!pageContent || ['professional', 'contact', 'terms', 'privacy'].includes(activeTab)) return null;
+    if (!pageContent || ['contact', 'terms', 'privacy'].includes(activeTab)) return null;
     return (
       <motion.div 
         initial={{ opacity: 0, y: -10 }} 
@@ -378,7 +406,7 @@ function MainApp() {
     return <div className="min-h-screen bg-white flex items-center justify-center text-zinc-900">Loading...</div>;
   }
 
-  if (!user && !['professional', 'contact', 'terms', 'privacy'].includes(activeTab)) {
+  if (!user && !['contact', 'terms', 'privacy'].includes(activeTab)) {
     return (
       <div className="min-h-screen bg-white text-zinc-900 selection:bg-emerald-500/30 font-sans overflow-y-auto flex flex-col">
         {/* Navigation */}
@@ -464,12 +492,11 @@ function MainApp() {
               <span className="font-bold text-sm tracking-tight">PixelPay</span>
             </div>
             <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-zinc-500">
-              <Link to="/professional" className="hover:text-emerald-400 transition-colors">Professional</Link>
               <Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link>
               <Link to="/terms" className="hover:text-emerald-400 transition-colors">Terms & Conditions</Link>
               <Link to="/privacy" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link>
             </div>
-            <p className="text-xs text-zinc-400">© 2026 PixelPay. All rights reserved.</p>
+            <p className="text-xs text-zinc-400">© 2026 NoPaymentGateway.xyz. All rights reserved.</p>
           </div>
         </footer>
       </div>
@@ -492,7 +519,7 @@ function MainApp() {
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                   <CreditCard size={18} className="text-zinc-900" />
                 </div>
-                <span className="font-bold text-lg tracking-tight text-zinc-900">PixelPay</span>
+                <span className="font-bold text-lg tracking-tight text-zinc-900">NoPaymentGateway.xyz</span>
               </div>
               <button className="md:hidden text-zinc-500 hover:text-zinc-900" onClick={() => setIsSidebarOpen(false)}>
                 <X size={20} />
@@ -510,7 +537,6 @@ function MainApp() {
               )}
               
               <div className="pt-6 pb-2 px-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Company</div>
-              <NavItem icon={Building2} label="Professional" tab="professional" />
               <NavItem icon={Globe} label="Contact" tab="contact" />
               <NavItem icon={ShieldCheck} label="Terms & Conditions" tab="terms" />
               <NavItem icon={Lock} label="Privacy Policy" tab="privacy" />
@@ -518,17 +544,41 @@ function MainApp() {
 
             <div className="p-4">
               {user ? (
-                <div className="bg-white border border-black/5 rounded-2xl p-4 mb-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+                <div className="bg-white border border-black/5 rounded-2xl p-4 mb-4 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/20">
                       {user.displayName?.charAt(0) || 'U'}
                     </div>
                     <div className="flex-1 overflow-hidden">
-                      <p className="text-sm text-zinc-900 font-medium truncate">{user.displayName}</p>
-                      <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                      <p className="text-sm text-zinc-900 font-bold truncate">{user.displayName}</p>
+                      <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider truncate">Personal Account</p>
                     </div>
                   </div>
-                  <button onClick={logout} className="w-full py-2 bg-black/5 hover:bg-black/10 rounded-lg text-xs font-medium text-zinc-600 flex items-center justify-center gap-2 transition-colors">
+                  
+                  <div className="space-y-1 mb-4">
+                    <div 
+                      onClick={() => navigate('/profile')}
+                      className={`flex items-center justify-between p-2 rounded-lg hover:bg-zinc-50 transition-colors cursor-pointer group ${activeTab === 'profile' ? 'bg-zinc-50' : ''}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <UserIcon size={14} className={activeTab === 'profile' ? 'text-brand-600' : 'text-zinc-400 group-hover:text-zinc-600'} />
+                        <span className={`text-xs font-medium ${activeTab === 'profile' ? 'text-zinc-900 font-bold' : 'text-zinc-600'}`}>Profile Settings</span>
+                      </div>
+                      <ChevronRight size={12} className="text-zinc-300" />
+                    </div>
+                    <div 
+                      onClick={() => navigate('/security')}
+                      className={`flex items-center justify-between p-2 rounded-lg hover:bg-zinc-50 transition-colors cursor-pointer group ${activeTab === 'security' ? 'bg-zinc-50' : ''}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck size={14} className={activeTab === 'security' ? 'text-brand-600' : 'text-zinc-400 group-hover:text-zinc-600'} />
+                        <span className={`text-xs font-medium ${activeTab === 'security' ? 'text-zinc-900 font-bold' : 'text-zinc-600'}`}>Security</span>
+                      </div>
+                      <ChevronRight size={12} className="text-zinc-300" />
+                    </div>
+                  </div>
+
+                  <button onClick={logout} className="w-full py-2.5 bg-zinc-50 hover:bg-red-50 hover:text-red-600 rounded-xl text-xs font-bold text-zinc-500 flex items-center justify-center gap-2 transition-all border border-black/[0.03]">
                     <LogOut size={14} /> Sign Out
                   </button>
                 </div>
@@ -557,7 +607,6 @@ function MainApp() {
             <h1 className="font-display font-bold text-zinc-900 text-xl">
               {activeTab === 'create' ? 'Create Product' : 
                activeTab === 'playground' ? 'Playground' : 
-               activeTab === 'professional' ? 'Professional' :
                activeTab === 'contact' ? 'Contact' :
                activeTab === 'terms' ? 'Terms & Conditions' :
                activeTab === 'privacy' ? 'Privacy Policy' :
@@ -565,9 +614,6 @@ function MainApp() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-2">
-              <ShieldCheck size={14} /> Secure Hosted Checkout
-            </div>
           </div>
         </header>
 
@@ -665,6 +711,12 @@ function MainApp() {
           {/* CREATE TAB */}
           {activeTab === 'create' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-medium">
+                  <AlertCircle size={18} />
+                  {error}
+                </div>
+              )}
               <div className="premium-card p-10">
               
                 <div className="flex items-center gap-4 mb-10">
@@ -682,6 +734,45 @@ function MainApp() {
                     <div className="space-y-6">
                       <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+                        Product Image
+                      </h3>
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`relative aspect-video rounded-[2rem] border-2 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-4 ${coverImage ? 'border-brand-500 bg-brand-50/30' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100 hover:border-zinc-300'}`}
+                      >
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={handleImageUpload} 
+                          className="hidden" 
+                          accept="image/*"
+                        />
+                        {coverImage ? (
+                          <>
+                            <img src={coverImage} alt="Cover" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <div className="px-4 py-2 bg-white rounded-xl text-xs font-bold text-zinc-900 flex items-center gap-2">
+                                <Upload size={14} /> Change Image
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-black/[0.03] flex items-center justify-center text-zinc-400">
+                              <Upload size={24} />
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm font-bold text-zinc-900">Click to upload product image</p>
+                              <p className="text-xs text-zinc-500 mt-1">PNG, JPG up to 500KB</p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
                         Basic Information
                       </h3>
                       
@@ -692,7 +783,7 @@ function MainApp() {
                             type="text"
                             value={merchantName}
                             onChange={(e) => setMerchantName(e.target.value)}
-                            placeholder="e.g. PixelPay Store"
+                            placeholder="e.g. NoPaymentGateway.xyz Store"
                             className="w-full px-5 py-4 bg-zinc-50 border border-black/[0.03] rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium"
                           />
                         </div>
@@ -728,12 +819,19 @@ function MainApp() {
                               <option value="EUR">EUR (€)</option>
                               <option value="INR">INR (₹)</option>
                               <option value="GBP">GBP (£)</option>
+                              <option value="CAD">CAD ($)</option>
+                              <option value="AUD">AUD ($)</option>
+                              <option value="JPY">JPY (¥)</option>
+                              <option value="SGD">SGD ($)</option>
+                              <option value="AED">AED (د.إ)</option>
                             </select>
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </div>
 
-                      <div className="space-y-8">
+                  <div className="space-y-8">
                     <div className="space-y-6">
                       <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
@@ -741,6 +839,29 @@ function MainApp() {
                       </h3>
                       
                       <div className="space-y-4">
+                        <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-4">
+                          <div className="flex items-center gap-3">
+                            <Building2 size={18} className="text-brand-500" />
+                            <span className="text-sm font-bold text-zinc-800">Bank Transfer (Global)</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              placeholder="Account Number"
+                              value={bankAcc}
+                              onChange={(e) => setBankAcc(e.target.value)}
+                              className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
+                            />
+                            <input
+                              type="text"
+                              placeholder="IFSC / SWIFT Code"
+                              value={bankIfsc}
+                              onChange={(e) => setBankIfsc(e.target.value)}
+                              className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
+                            />
+                          </div>
+                        </div>
+
                         <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-4">
                           <div className="flex items-center gap-3">
                             <Smartphone size={18} className="text-brand-500" />
@@ -793,10 +914,8 @@ function MainApp() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="mt-12 pt-8 border-t border-black/[0.03]">
+                <div className="mt-12 pt-8 border-t border-black/[0.03]">
                   <button 
                     onClick={handleCreateProduct}
                     disabled={loading}
@@ -856,11 +975,11 @@ function MainApp() {
                         <Play size={16} /> Test in Playground
                       </button>
                     </div>
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-        )}
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          )}
                   {/* PLAYGROUND TAB */}
           {activeTab === 'playground' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
@@ -953,7 +1072,7 @@ function MainApp() {
                         </div>
                         <div>
                           <h4 className="text-lg font-bold text-zinc-900 mb-2">Test the Overlay</h4>
-                          <p className="text-sm text-zinc-500">Click the button below to trigger the PixelPay checkout overlay just as it would appear on your website.</p>
+                          <p className="text-sm text-zinc-500">Click the button below to trigger the NoPaymentGateway.xyz checkout overlay just as it would appear on your website.</p>
                         </div>
                         <button 
                           disabled={!testProductId}
@@ -992,6 +1111,151 @@ function MainApp() {
             </motion.div>
           )}
 
+          {/* PROFILE TAB */}
+          {activeTab === 'profile' && user && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-8">
+              <div className="premium-card p-10">
+                <div className="flex items-center gap-6 mb-10">
+                  <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-4xl font-bold shadow-2xl shadow-emerald-500/20">
+                    {user.displayName?.charAt(0) || 'U'}
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-display font-bold text-zinc-900 mb-2">{user.displayName}</h2>
+                    <p className="text-zinc-500 font-medium">Manage your personal information and account preferences.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Full Name</label>
+                      <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
+                        <UserIcon size={18} className="text-zinc-400" />
+                        <span className="text-zinc-900 font-medium">{user.displayName}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Email Address</label>
+                      <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
+                        <Mail size={18} className="text-zinc-400" />
+                        <span className="text-zinc-900 font-medium">{user.email}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Phone Number</label>
+                      <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
+                        <Phone size={18} className="text-zinc-400" />
+                        <span className="text-zinc-500 italic">Not provided</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Location</label>
+                      <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
+                        <MapPin size={18} className="text-zinc-400" />
+                        <span className="text-zinc-500 italic">Not set</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-10 pt-10 border-t border-zinc-100">
+                  <div className="flex items-center justify-between p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                        <Calendar size={20} className="text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-emerald-900">Account Created</p>
+                        <p className="text-xs text-emerald-600 font-medium">Member since March 2026</p>
+                      </div>
+                    </div>
+                    <button className="px-6 py-2 bg-white text-emerald-600 rounded-xl text-sm font-bold shadow-sm hover:bg-emerald-50 transition-colors">
+                      View Activity
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* SECURITY TAB */}
+          {activeTab === 'security' && user && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-8">
+              <div className="premium-card p-10">
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="w-12 h-12 bg-brand-50 rounded-2xl flex items-center justify-center border border-brand-100">
+                    <Shield size={24} className="text-brand-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-display font-bold text-zinc-900">Security Settings</h2>
+                    <p className="text-sm text-zinc-500">Protect your account with advanced security features.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl group hover:border-brand-500/20 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                        <Key size={20} className="text-zinc-400 group-hover:text-brand-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-zinc-900">Two-Factor Authentication</p>
+                        <p className="text-xs text-zinc-500">Add an extra layer of security to your account.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="px-3 py-1 bg-zinc-200 text-zinc-600 text-[10px] font-bold uppercase rounded-full">Disabled</span>
+                      <button className="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold hover:bg-brand-700 transition-colors">
+                        Enable
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl group hover:border-brand-500/20 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                        <Smartphone size={20} className="text-zinc-400 group-hover:text-brand-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-zinc-900">Login Notifications</p>
+                        <p className="text-xs text-zinc-500">Get notified whenever someone logs into your account.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="px-3 py-1 bg-emerald-500/20 text-emerald-600 text-[10px] font-bold uppercase rounded-full">Active</span>
+                      <button className="px-4 py-2 bg-zinc-200 text-zinc-600 rounded-xl text-xs font-bold hover:bg-zinc-300 transition-colors">
+                        Configure
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl group hover:border-brand-500/20 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                        <Globe size={20} className="text-zinc-400 group-hover:text-brand-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-zinc-900">Active Sessions</p>
+                        <p className="text-xs text-zinc-500">Manage and sign out of your active sessions on other devices.</p>
+                      </div>
+                    </div>
+                    <button className="px-4 py-2 bg-zinc-200 text-zinc-600 rounded-xl text-xs font-bold hover:bg-zinc-300 transition-colors">
+                      View Sessions
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-10 pt-10 border-t border-zinc-100">
+                  <button className="text-red-500 text-sm font-bold hover:underline">
+                    Delete Account and Data
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* DOCS TAB */}
           {activeTab === 'docs' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-8">
@@ -1002,7 +1266,7 @@ function MainApp() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-display font-bold text-zinc-900">Integration Guide</h2>
-                    <p className="text-sm text-zinc-500">How to add PixelPay to your website.</p>
+                    <p className="text-sm text-zinc-500">How to add NoPaymentGateway.xyz to your website.</p>
                   </div>
                 </div>
                 
@@ -1010,7 +1274,7 @@ function MainApp() {
                   <section className="relative pl-10">
                     <div className="absolute left-0 top-0 w-8 h-8 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
                     <h3 className="text-lg font-bold text-zinc-900 mb-3">Create a Product</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Use the <span className="text-brand-600 font-bold cursor-pointer hover:underline" onClick={() => navigate('/create')}>Create</span> tab to define your product details and set your payment routing. PixelPay will securely host this data on the decentralized protocol.</p>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Use the <span className="text-brand-600 font-bold cursor-pointer hover:underline" onClick={() => navigate('/create')}>Create</span> tab to define your product details and set your payment routing. NoPaymentGateway.xyz will securely host this data on the decentralized protocol.</p>
                   </section>
 
                   <section className="relative pl-10">
@@ -1029,7 +1293,7 @@ function MainApp() {
             </motion.div>
           )}
 
-          {['professional', 'contact', 'terms', 'privacy'].includes(activeTab) && (
+          {['contact', 'terms', 'privacy'].includes(activeTab) && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-8">
               <div className="premium-card p-10">
                 {pageContent ? (
@@ -1048,7 +1312,6 @@ function MainApp() {
               </div>
             </motion.div>
           )}
-
         </div>
       </main>
 
@@ -1090,8 +1353,7 @@ function MainApp() {
                   <div className="text-right">
                     <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider">Total Amount</p>
                     <p className="text-3xl font-display font-bold text-zinc-900">
-                      {checkoutData.currency === 'USD' ? '$' : checkoutData.currency === 'EUR' ? '€' : checkoutData.currency === 'INR' ? '₹' : ''}
-                      {checkoutData.amount}
+                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: checkoutData.currency }).format(checkoutData.amount)}
                     </p>
                   </div>
                 </div>
@@ -1139,6 +1401,45 @@ function MainApp() {
                     </div>
                   )}
 
+                  {checkoutData.methods.bank && (
+                    <div className="bg-white border border-black/[0.03] rounded-[2rem] p-6 shadow-sm">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 rounded-2xl bg-zinc-50 flex items-center justify-center border border-zinc-100">
+                          <Building2 size={20} className="text-zinc-600" />
+                        </div>
+                        <h4 className="font-bold text-zinc-900">Bank Transfer</h4>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="p-4 bg-zinc-50 rounded-2xl border border-black/[0.03]">
+                          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">Account Number</p>
+                          <div className="flex items-center justify-between">
+                            <code className="text-sm font-mono text-zinc-700 font-bold">{checkoutData.methods.bank.account}</code>
+                            <button 
+                              onClick={() => copyToClipboard(checkoutData.methods.bank!.account, 'bankAcc')}
+                              className="text-brand-600 hover:text-brand-700"
+                            >
+                              {copiedField === 'bankAcc' ? <Check size={14}/> : <Copy size={14}/>}
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="p-4 bg-zinc-50 rounded-2xl border border-black/[0.03]">
+                          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">IFSC / SWIFT Code</p>
+                          <div className="flex items-center justify-between">
+                            <code className="text-sm font-mono text-zinc-700 font-bold">{checkoutData.methods.bank.ifsc}</code>
+                            <button 
+                              onClick={() => copyToClipboard(checkoutData.methods.bank!.ifsc, 'bankIfsc')}
+                              className="text-brand-600 hover:text-brand-700"
+                            >
+                              {copiedField === 'bankIfsc' ? <Check size={14}/> : <Copy size={14}/>}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {checkoutData.methods.stripe && (
                     <div className="bg-white border border-black/[0.03] rounded-[2rem] p-6 shadow-sm">
                       <div className="flex items-center gap-4 mb-6">
@@ -1171,7 +1472,7 @@ function MainApp() {
               
               <div className="bg-zinc-50 px-8 py-6 text-center border-t border-zinc-100">
                 <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                  <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption by PixelPay
+                  <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption by NoPaymentGateway.xyz
                 </p>
               </div>
             </motion.div>

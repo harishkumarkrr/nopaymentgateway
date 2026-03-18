@@ -1,6 +1,7 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import "dotenv/config";
 
 async function startServer() {
   const app = express();
@@ -14,7 +15,7 @@ async function startServer() {
   app.get("/api/dashboard", (req, res) => {
     res.json({
       title: "Dashboard Overview",
-      content: "Welcome to your PixelPay dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
+      content: "Welcome to your NoPaymentGateway.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
     });
   });
 
@@ -35,28 +36,35 @@ async function startServer() {
   app.get("/api/docs", (req, res) => {
     res.json({
       title: "Integration & API",
-      content: "Comprehensive documentation for integrating PixelPay into your existing workflows using our lightweight JS SDK and REST APIs."
+      content: "Comprehensive documentation for integrating NoPaymentGateway.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
     });
   });
 
-  app.get("/api/professional", (req, res) => {
+  app.get("/api/profile", (req, res) => {
     res.json({
-      title: "Professional Services",
-      content: "We offer enterprise-grade payment processing solutions tailored for high-volume creators and businesses. Our professional tier includes dedicated account management, custom API rate limits, and priority 24/7 technical support."
+      title: "Profile Settings",
+      content: "Manage your personal information, contact details, and account preferences."
+    });
+  });
+
+  app.get("/api/security", (req, res) => {
+    res.json({
+      title: "Security Settings",
+      content: "Protect your account with two-factor authentication, login notifications, and session management."
     });
   });
 
   app.get("/api/contact", (req, res) => {
     res.json({
       title: "Contact Us",
-      content: "Get in touch with our team for any inquiries. Email us at support@pixelpay.example.com or call us at 1-800-PIXELPAY. Our support hours are Monday to Friday, 9 AM to 6 PM EST."
+      content: "Get in touch with our team for any inquiries. Email us at support@nopaymentgateway.xyz or call us at 1-800-NOPAYMENT. Our support hours are Monday to Friday, 9 AM to 6 PM EST."
     });
   });
 
   app.get("/api/terms", (req, res) => {
     res.json({
       title: "Terms and Conditions",
-      content: "By using PixelPay, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods."
+      content: "By using NoPaymentGateway.xyz, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods."
     });
   });
 

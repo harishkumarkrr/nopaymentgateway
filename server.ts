@@ -74,6 +74,15 @@ app.get("/api/privacy", (req, res) => {
   });
 });
 
+// Static file serving and SPA fallback
+if (process.env.NODE_ENV === "production") {
+  const distPath = path.join(process.cwd(), 'dist');
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 export async function startServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
@@ -82,12 +91,6 @@ export async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
   }
 
   if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {

@@ -1167,10 +1167,10 @@ function MainApp() {
                         <label className="text-[10px] font-bold uppercase text-brand-600/60 ml-1">Embed Code</label>
                         <div className="relative group">
                           <pre className="bg-white border border-brand-200 p-4 rounded-2xl text-[11px] font-mono text-zinc-700 overflow-x-auto">
-                            {`<script src="${window.location.origin}/embed.js" async></script>\n<div data-pixelpay-id="${resultProductId}"></div>`}
+                            {`<script src="${window.location.origin}/embed.js" async></script>\n<div data-nopaymentgateway-id="${resultProductId}"></div>`}
                           </pre>
                           <button 
-                            onClick={() => copyToClipboard(`<script src="${window.location.origin}/embed.js" async></script>\n<div data-pixelpay-id="${resultProductId}"></div>`, 'embed')}
+                            onClick={() => copyToClipboard(`<script src="${window.location.origin}/embed.js" async></script>\n<div data-nopaymentgateway-id="${resultProductId}"></div>`, 'embed')}
                             className="absolute right-3 top-3 p-2 bg-brand-50 text-brand-600 rounded-xl hover:bg-brand-100 transition-all opacity-0 group-hover:opacity-100"
                           >
                             {copiedField === 'embed' ? <Check size={16} /> : <Copy size={16} />}
@@ -1233,7 +1233,7 @@ function MainApp() {
                           <div className="w-2.5 h-2.5 rounded-full bg-zinc-300"></div>
                         </div>
                         <div className="mx-auto bg-white border border-black/[0.05] rounded-full px-4 py-1 text-[10px] text-zinc-400 font-mono flex items-center gap-2">
-                          <Lock size={10} /> pixelpay.io/s/{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}
+                          <Lock size={10} /> nopaymentgateway.io/s/{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}
                         </div>
                       </div>
 
@@ -1615,8 +1615,8 @@ function MainApp() {
                         </button>
                       </div>
                       <a 
-                        href={`upi://pay?pa=${checkoutData.methods.upi}&pn=${checkoutData.merchantName}&am=${checkoutData.amount}&cu=INR`}
-                        className="w-full premium-button premium-button-brand py-4 text-sm"
+                        href={`upi://pay?pa=${checkoutData.methods.upi}&pn=${encodeURIComponent(checkoutData.merchantName)}&am=${checkoutData.amount}&cu=${checkoutData.currency}`}
+                        className="w-full premium-button premium-button-brand py-4 text-sm flex items-center justify-center"
                       >
                         Open UPI App
                       </a>

@@ -145,7 +145,7 @@ function MainApp() {
   const [pageContent, setPageContent] = useState<{title: string, content: string} | null>(null);
 
   useEffect(() => {
-    if (['professional', 'contact', 'terms', 'privacy'].includes(activeTab)) {
+    if (['dashboard', 'create', 'demo', 'test-embed', 'docs', 'professional', 'contact', 'terms', 'privacy'].includes(activeTab)) {
       setPageContent(null);
       fetch(`/api/${activeTab}`)
         .then(res => res.json())
@@ -361,6 +361,20 @@ function MainApp() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const PageHeader = () => {
+    if (!pageContent || ['professional', 'contact', 'terms', 'privacy'].includes(activeTab)) return null;
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }} 
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8 p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-3xl"
+      >
+        <h2 className="text-xl font-bold text-zinc-900 mb-2">{pageContent.title}</h2>
+        <p className="text-zinc-600 text-sm leading-relaxed">{pageContent.content}</p>
+      </motion.div>
+    );
+  };
+
   const NavItem = ({ icon: Icon, label, tab }: { icon: any, label: string, tab: Tab }) => (
     <button
       onClick={() => setActiveTab(tab)}
@@ -379,26 +393,31 @@ function MainApp() {
     return <div className="min-h-screen bg-white flex items-center justify-center text-zinc-900">Loading...</div>;
   }
 
-  if (!user) {
+  if (!user && !['professional', 'contact', 'terms', 'privacy'].includes(activeTab)) {
     return (
-      <div className="min-h-screen bg-white text-zinc-900 selection:bg-emerald-500/30 font-sans overflow-y-auto">
+      <div className="min-h-screen bg-white text-zinc-900 selection:bg-emerald-500/30 font-sans overflow-y-auto flex flex-col">
         {/* Navigation */}
         <nav className="fixed top-0 w-full z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <CreditCard size={18} className="text-zinc-900" />
               </div>
               <span className="font-bold text-lg tracking-tight">PixelPay</span>
             </div>
-            <button onClick={loginWithGoogle} className="text-sm font-medium hover:text-emerald-400 transition-colors">
-              Sign In
-            </button>
+            <div className="flex items-center gap-4">
+              <button onClick={loginWithGoogle} className="text-sm font-medium hover:text-emerald-400 transition-colors">
+                Sign In
+              </button>
+              <button onClick={loginWithGoogle} className="px-5 py-2 bg-black text-white rounded-full text-sm font-bold hover:bg-zinc-800 transition-all">
+                Sign Up
+              </button>
+            </div>
           </div>
         </nav>
 
         {/* Hero Section */}
-        <main className="pt-32 pb-16 px-6 relative">
+        <main className="pt-32 pb-16 px-6 relative flex-1">
           {/* Background glow */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/20 rounded-full blur-[120px] pointer-events-none"></div>
           
@@ -450,6 +469,24 @@ function MainApp() {
             </motion.div>
           </div>
         </main>
+
+        <footer className="border-t border-black/5 py-12 px-6 bg-zinc-50">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center">
+                <CreditCard size={14} className="text-white" />
+              </div>
+              <span className="font-bold text-sm tracking-tight">PixelPay</span>
+            </div>
+            <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-zinc-500">
+              <button onClick={() => setActiveTab('professional')} className="hover:text-emerald-400 transition-colors">Professional</button>
+              <button onClick={() => setActiveTab('contact')} className="hover:text-emerald-400 transition-colors">Contact</button>
+              <button onClick={() => setActiveTab('terms')} className="hover:text-emerald-400 transition-colors">Terms & Conditions</button>
+              <button onClick={() => setActiveTab('privacy')} className="hover:text-emerald-400 transition-colors">Privacy Policy</button>
+            </div>
+            <p className="text-xs text-zinc-400">© 2026 PixelPay. All rights reserved.</p>
+          </div>
+        </footer>
       </div>
     );
   }
@@ -466,7 +503,7 @@ function MainApp() {
             className="w-[280px] border-r border-black/10 bg-zinc-50 flex flex-col z-20 absolute md:relative h-full"
           >
             <div className="p-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                   <CreditCard size={18} className="text-zinc-900" />
                 </div>
@@ -478,11 +515,15 @@ function MainApp() {
             </div>
 
             <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
-              <NavItem icon={LayoutDashboard} label="Dashboard" tab="dashboard" />
-              <NavItem icon={ImageIcon} label="Create Product" tab="create" />
-              <NavItem icon={ShoppingBag} label="Storefront Demo" tab="demo" />
-              <NavItem icon={Play} label="Live Embed Tester" tab="test-embed" />
-              <NavItem icon={Code} label="Integration & API" tab="docs" />
+              {user && (
+                <>
+                  <NavItem icon={LayoutDashboard} label="Dashboard" tab="dashboard" />
+                  <NavItem icon={ImageIcon} label="Create Product" tab="create" />
+                  <NavItem icon={ShoppingBag} label="Storefront Demo" tab="demo" />
+                  <NavItem icon={Play} label="Live Embed Tester" tab="test-embed" />
+                  <NavItem icon={Code} label="Integration & API" tab="docs" />
+                </>
+              )}
               
               <div className="pt-6 pb-2 px-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Company</div>
               <NavItem icon={Building2} label="Professional" tab="professional" />
@@ -492,20 +533,29 @@ function MainApp() {
             </nav>
 
             <div className="p-4">
-              <div className="bg-white border border-black/5 rounded-2xl p-4 mb-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
-                    {user.displayName?.charAt(0) || 'U'}
+              {user ? (
+                <div className="bg-white border border-black/5 rounded-2xl p-4 mb-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+                      {user.displayName?.charAt(0) || 'U'}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-sm text-zinc-900 font-medium truncate">{user.displayName}</p>
+                      <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 overflow-hidden">
-                    <p className="text-sm text-zinc-900 font-medium truncate">{user.displayName}</p>
-                    <p className="text-xs text-zinc-500 truncate">{user.email}</p>
-                  </div>
+                  <button onClick={logout} className="w-full py-2 bg-black/5 hover:bg-black/10 rounded-lg text-xs font-medium text-zinc-600 flex items-center justify-center gap-2 transition-colors">
+                    <LogOut size={14} /> Sign Out
+                  </button>
                 </div>
-                <button onClick={logout} className="w-full py-2 bg-black/5 hover:bg-black/10 rounded-lg text-xs font-medium text-zinc-600 flex items-center justify-center gap-2 transition-colors">
-                  <LogOut size={14} /> Sign Out
-                </button>
-              </div>
+              ) : (
+                <div className="bg-white border border-black/5 rounded-2xl p-4 mb-4">
+                  <p className="text-xs text-zinc-500 mb-3 text-center">Sign in to access your dashboard</p>
+                  <button onClick={loginWithGoogle} className="w-full py-2 bg-black text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors">
+                    Sign In
+                  </button>
+                </div>
+              )}
             </div>
           </motion.aside>
         )}
@@ -539,6 +589,7 @@ function MainApp() {
         </header>
 
         <div className="p-6 md:p-10 max-w-6xl mx-auto w-full">
+          <PageHeader />
           
           {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (

@@ -11,6 +11,41 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.get("/api/dashboard", (req, res) => {
+    res.json({
+      title: "Dashboard Overview",
+      content: "Welcome to your PixelPay dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
+    });
+  });
+
+  app.get("/api/create", (req, res) => {
+    res.json({
+      title: "Create Product",
+      content: "Generate a new payment link by providing product details and your preferred payment methods."
+    });
+  });
+
+  app.get("/api/demo", (req, res) => {
+    res.json({
+      title: "Storefront Demo",
+      content: "Experience how your customers see your products. This demo shows a live preview of your hosted storefront."
+    });
+  });
+
+  app.get("/api/test-embed", (req, res) => {
+    res.json({
+      title: "Live Embed Tester",
+      content: "Test your PixelPay integration by embedding your product links into this live preview environment."
+    });
+  });
+
+  app.get("/api/docs", (req, res) => {
+    res.json({
+      title: "Integration & API",
+      content: "Comprehensive documentation for integrating PixelPay into your existing workflows using our lightweight JS SDK and REST APIs."
+    });
+  });
+
   app.get("/api/professional", (req, res) => {
     res.json({
       title: "Professional Services",

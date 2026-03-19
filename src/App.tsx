@@ -28,11 +28,8 @@ import {
   User as UserIcon,
   ChevronRight,
   Mail,
-  Phone,
-  MapPin,
   Calendar,
   Shield,
-  Key,
   Share2,
   PlusCircle,
   PlayCircle,
@@ -168,16 +165,114 @@ const staticPageContent: Record<string, { title: string; content: string }> = {
   },
   contact: {
     title: "Contact Us",
-    content: "Get in touch with our team for any inquiries. Email us at support@nopaymentgateway.xyz or call us at 1-800-NOPAYMENT. Our support hours are Monday to Friday, 9 AM to 6 PM EST."
+    content: `Need help with your payment links, merchant account setup, or link verification process? We are here to help.
+
+Support Email: support@nopaymentsgateway.xyz
+Response Time: Within 1 business day
+
+When contacting support, include:
+- Your registered email address
+- Product/link ID (if applicable)
+- A short description of the issue
+- Screenshot or error message (if available)
+
+Business Hours:
+Monday to Friday, 9:00 AM to 6:00 PM IST
+
+For urgent production-impacting issues, mention "URGENT" in the email subject line.`
   },
   terms: {
     title: "Terms and Conditions",
-    content: "By using NoPaymentGateway.xyz, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods."
+    content: `Effective Date: March 19, 2026
+
+1. Service Scope
+NoPaymentGateway.xyz provides tools to publish and share payment instruction links. We are not a payment processor, bank, wallet provider, money transmitter, or escrow service. Funds are transferred directly between payer and merchant through third-party rails selected by the merchant.
+
+2. Merchant Responsibility
+Merchants are solely responsible for:
+- Accuracy of payment details and amounts
+- Delivery of goods/services
+- Tax, invoicing, and legal compliance in their jurisdiction
+- Customer support, refund, and dispute handling
+
+3. User Conduct
+You agree not to use the platform for unlawful, fraudulent, misleading, harmful, or prohibited activities. We may suspend or remove access for abuse, policy violations, or legal risk.
+
+4. No Transaction Liability
+Because payments happen outside our platform, we do not control or guarantee payment completion, reversals, chargebacks, settlement timelines, or payer/merchant disputes.
+
+5. Data and Account Security
+You are responsible for keeping your account access secure and for all actions performed through your account.
+
+6. Availability
+We aim for reliable service but do not guarantee uninterrupted availability. Features may change, be updated, or be discontinued.
+
+7. Limitation of Liability
+To the maximum extent permitted by law, NoPaymentGateway.xyz is not liable for indirect, incidental, special, consequential, or punitive damages, or for loss of revenue/profits/data arising from use of the service.
+
+8. Termination
+We may suspend or terminate access for violations, abuse, legal obligations, or operational risk.
+
+9. Governing Law
+These terms are governed by applicable local laws based on the merchant’s operating jurisdiction unless otherwise required by law.
+
+10. Contact
+For legal or compliance concerns, contact: support@nopaymentsgateway.xyz`
   },
   privacy: {
     title: "Privacy Policy",
-    content: "Your privacy is our priority. We collect only the necessary information required to process payments securely. We do not sell your personal data to third parties. All payment data is encrypted in transit and at rest."
+    content: `Effective Date: March 19, 2026
+
+NoPaymentGateway.xyz values your privacy. This policy explains what we collect, why we collect it, and how it is handled.
+
+1. Information We Collect
+- Account data: name, email, authentication provider details
+- Merchant content: product names, payment instructions, pricing, media assets
+- Technical data: device/browser metadata, logs, diagnostics, and security events
+
+2. How We Use Data
+- To operate and secure the platform
+- To provide support and resolve issues
+- To prevent abuse, fraud, and policy violations
+- To improve product performance and reliability
+
+3. Payment Data Scope
+Payments are executed outside our platform via merchant-provided methods. We do not process card transactions directly unless explicitly integrated with a third-party processor by the merchant.
+
+4. Data Sharing
+We do not sell personal data. Data may be shared only with infrastructure/service providers required to run the product, or when legally required.
+
+5. Data Retention
+We retain data for as long as needed to provide services, comply with legal obligations, and resolve disputes.
+
+6. Security
+We apply reasonable administrative and technical safeguards, but no system is completely risk-free.
+
+7. Your Rights
+You may request access, correction, or deletion of personal data, subject to legal and operational limits.
+
+8. Children
+The platform is not intended for children under 18.
+
+9. Contact
+Privacy requests and concerns: support@nopaymentsgateway.xyz`
   }
+};
+
+const getTabTitle = (tab: string) => {
+  const titleMap: Record<string, string> = {
+    dashboard: 'Dashboard',
+    create: 'Create Product',
+    playground: 'Playground',
+    docs: 'Integration & API',
+    contact: 'Contact',
+    terms: 'Terms & Conditions',
+    privacy: 'Privacy Policy',
+    profile: 'Profile Settings',
+    security: 'Security',
+    pay: 'Payment Link'
+  };
+  return titleMap[tab] || (tab.charAt(0).toUpperCase() + tab.slice(1));
 };
 
 function MainApp() {
@@ -717,12 +812,7 @@ function MainApp() {
               </button>
             )}
             <h1 className="font-display font-bold text-zinc-900 text-xl">
-              {activeTab === 'create' ? 'Create Product' : 
-               activeTab === 'playground' ? 'Playground' : 
-               activeTab === 'contact' ? 'Contact' :
-               activeTab === 'terms' ? 'Terms & Conditions' :
-               activeTab === 'privacy' ? 'Privacy Policy' :
-               activeTab}
+              {getTabTitle(activeTab)}
             </h1>
           </div>
           <div className="flex items-center gap-4">
@@ -1569,7 +1659,7 @@ function MainApp() {
                   </div>
                   <div>
                     <h2 className="text-3xl font-display font-bold text-zinc-900 mb-2">{user.displayName}</h2>
-                    <p className="text-zinc-500 font-medium">Manage your personal information and account preferences.</p>
+                    <p className="text-zinc-500 font-medium">Account identity and verification details.</p>
                   </div>
                 </div>
 
@@ -1589,39 +1679,65 @@ function MainApp() {
                         <span className="text-zinc-900 font-medium">{user.email}</span>
                       </div>
                     </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Email Verification</label>
+                      <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
+                        <Shield size={18} className="text-zinc-400" />
+                        <span className={`font-medium ${user.emailVerified ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {user.emailVerified ? 'Verified' : 'Not Verified'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-6">
                     <div>
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Phone Number</label>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">User ID</label>
                       <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
-                        <Phone size={18} className="text-zinc-400" />
-                        <span className="text-zinc-500 italic">Not provided</span>
+                        <code className="text-zinc-700 text-xs font-mono break-all flex-1">{user.uid}</code>
+                        <button
+                          onClick={() => copyToClipboard(user.uid, 'uid')}
+                          className="text-brand-600 hover:text-brand-700"
+                          title="Copy User ID"
+                        >
+                          {copiedField === 'uid' ? <Check size={14} /> : <Copy size={14} />}
+                        </button>
                       </div>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Location</label>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Sign-in Provider</label>
                       <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
-                        <MapPin size={18} className="text-zinc-400" />
-                        <span className="text-zinc-500 italic">Not set</span>
+                        <span className="text-zinc-900 font-medium">
+                          {user.providerData.length > 0 ? user.providerData.map((p) => p.providerId).join(', ') : 'Unknown'}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-10 pt-10 border-t border-zinc-100">
-                  <div className="flex items-center justify-between p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
-                    <div className="flex items-center gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-4 p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
                         <Calendar size={20} className="text-emerald-600" />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-emerald-900">Account Created</p>
-                        <p className="text-xs text-emerald-600 font-medium">Member since March 2026</p>
+                        <p className="text-xs text-emerald-600 font-medium">
+                          {user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleString() : 'Unavailable'}
+                        </p>
                       </div>
                     </div>
-                    <button className="px-6 py-2 bg-white text-emerald-600 rounded-xl text-sm font-bold shadow-sm hover:bg-emerald-50 transition-colors">
-                      View Activity
-                    </button>
+                    <div className="flex items-center gap-4 p-6 bg-zinc-50 rounded-3xl border border-black/[0.03]">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                        <ShieldCheck size={20} className="text-zinc-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-zinc-900">Last Sign-in</p>
+                        <p className="text-xs text-zinc-600 font-medium">
+                          {user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'Unavailable'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1638,67 +1754,75 @@ function MainApp() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-display font-bold text-zinc-900">Security Settings</h2>
-                    <p className="text-sm text-zinc-500">Protect your account with advanced security features.</p>
+                    <p className="text-sm text-zinc-500">Current account security status and recommended actions.</p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl group hover:border-brand-500/20 transition-all">
+                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                        <Key size={20} className="text-zinc-400 group-hover:text-brand-600" />
+                        <ShieldCheck size={20} className="text-zinc-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-zinc-900">Two-Factor Authentication</p>
-                        <p className="text-xs text-zinc-500">Add an extra layer of security to your account.</p>
+                        <p className="text-sm font-bold text-zinc-900">Authentication Provider</p>
+                        <p className="text-xs text-zinc-500">
+                          {user.providerData.length > 0 ? user.providerData.map((p) => p.providerId).join(', ') : 'Unknown'}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 bg-zinc-200 text-zinc-600 text-[10px] font-bold uppercase rounded-full">Disabled</span>
-                      <button className="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold hover:bg-brand-700 transition-colors">
-                        Enable
-                      </button>
+                    <div className="px-3 py-1 bg-emerald-500/20 text-emerald-700 text-[10px] font-bold uppercase rounded-full">
+                      Active
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl group hover:border-brand-500/20 transition-all">
+                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                        <Smartphone size={20} className="text-zinc-400 group-hover:text-brand-600" />
+                        <Mail size={20} className="text-zinc-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-zinc-900">Login Notifications</p>
-                        <p className="text-xs text-zinc-500">Get notified whenever someone logs into your account.</p>
+                        <p className="text-sm font-bold text-zinc-900">Account Recovery Contact</p>
+                        <p className="text-xs text-zinc-500">{user.email || 'Unavailable'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 bg-emerald-500/20 text-emerald-600 text-[10px] font-bold uppercase rounded-full">Active</span>
-                      <button className="px-4 py-2 bg-zinc-200 text-zinc-600 rounded-xl text-xs font-bold hover:bg-zinc-300 transition-colors">
-                        Configure
-                      </button>
+                    <div className={`px-3 py-1 text-[10px] font-bold uppercase rounded-full ${
+                      user.emailVerified ? 'bg-emerald-500/20 text-emerald-700' : 'bg-amber-500/20 text-amber-700'
+                    }`}>
+                      {user.emailVerified ? 'Verified' : 'Verification Pending'}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl group hover:border-brand-500/20 transition-all">
+                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                        <Globe size={20} className="text-zinc-400 group-hover:text-brand-600" />
+                        <Calendar size={20} className="text-zinc-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-zinc-900">Active Sessions</p>
-                        <p className="text-xs text-zinc-500">Manage and sign out of your active sessions on other devices.</p>
+                        <p className="text-sm font-bold text-zinc-900">Recent Account Activity</p>
+                        <p className="text-xs text-zinc-500">
+                          Last sign-in: {user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'Unavailable'}
+                        </p>
                       </div>
                     </div>
-                    <button className="px-4 py-2 bg-zinc-200 text-zinc-600 rounded-xl text-xs font-bold hover:bg-zinc-300 transition-colors">
-                      View Sessions
+                    <button
+                      onClick={() => logout()}
+                      className="px-4 py-2 bg-zinc-200 text-zinc-700 rounded-xl text-xs font-bold hover:bg-zinc-300 transition-colors"
+                    >
+                      Sign Out
                     </button>
                   </div>
                 </div>
 
                 <div className="mt-10 pt-10 border-t border-zinc-100">
-                  <button className="text-red-500 text-sm font-bold hover:underline">
-                    Delete Account and Data
-                  </button>
+                  <a
+                    href="https://myaccount.google.com/security"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-600 text-sm font-bold hover:underline inline-flex items-center gap-2"
+                  >
+                    Manage Provider Security <ExternalLink size={14} />
+                  </a>
                 </div>
               </div>
             </motion.div>

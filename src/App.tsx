@@ -1004,7 +1004,7 @@ function MainApp() {
                         </div>
                       )}
 
-                      {(hostedProduct.methods.stripe || (hostedProduct as any).stripe) && (
+                      {getStripeCheckoutUrl(hostedProduct) && (
                         <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">
@@ -1017,34 +1017,28 @@ function MainApp() {
                               </div>
                             </div>
                           </div>
-                          {getStripeCheckoutUrl(hostedProduct) ? (
-                            <div className="space-y-2">
-                              <a
-                                href={getStripeCheckoutUrl(hostedProduct)!}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full premium-button premium-button-brand py-3 text-sm flex items-center justify-center"
-                              >
-                                Pay with Card (Stripe)
-                              </a>
-                              <a
-                                href={getStripeCheckoutUrl(hostedProduct)!}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full py-3 bg-black text-white rounded-2xl font-bold hover:bg-zinc-800 transition-all text-sm flex items-center justify-center"
-                              >
-                                Pay with Apple Pay / Google Pay
-                              </a>
-                            </div>
-                          ) : (
-                            <button className="w-full py-3 bg-zinc-200 text-zinc-500 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
-                              Stripe Checkout URL Not Configured
-                            </button>
-                          )}
+                          <div className="space-y-2">
+                            <a
+                              href={getStripeCheckoutUrl(hostedProduct)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full premium-button premium-button-brand py-3 text-sm flex items-center justify-center"
+                            >
+                              Pay with Card (Stripe)
+                            </a>
+                            <a
+                              href={getStripeCheckoutUrl(hostedProduct)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full py-3 bg-black text-white rounded-2xl font-bold hover:bg-zinc-800 transition-all text-sm flex items-center justify-center"
+                            >
+                              Pay with Apple Pay / Google Pay
+                            </a>
+                          </div>
                         </div>
                       )}
 
-                      {(hostedProduct.methods.paypal || (hostedProduct as any).paypal) && (
+                      {getPaypalCheckoutUrl(hostedProduct) && (
                         <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">
@@ -1057,20 +1051,14 @@ function MainApp() {
                               </div>
                             </div>
                           </div>
-                          {getPaypalCheckoutUrl(hostedProduct) ? (
-                            <a
-                              href={getPaypalCheckoutUrl(hostedProduct)!}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full py-3 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all text-sm flex items-center justify-center"
-                            >
-                              PayPal Checkout
-                            </a>
-                          ) : (
-                            <button className="w-full py-3 bg-zinc-200 text-zinc-500 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
-                              PayPal Checkout URL Not Configured
-                            </button>
-                          )}
+                          <a
+                            href={getPaypalCheckoutUrl(hostedProduct)!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-3 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all text-sm flex items-center justify-center"
+                          >
+                            PayPal Checkout
+                          </a>
                         </div>
                       )}
                     </div>
@@ -2028,7 +2016,7 @@ function MainApp() {
                     </div>
                   )}
 
-                  {checkoutData.methods.stripe && (
+                  {getStripeCheckoutUrl(checkoutData) && (
                     <div className="bg-white border border-black/[0.03] rounded-[2rem] p-6 shadow-sm">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center border border-brand-100">
@@ -2036,34 +2024,28 @@ function MainApp() {
                         </div>
                         <h4 className="font-bold text-zinc-900">Pay via Stripe</h4>
                       </div>
-                      {getStripeCheckoutUrl(checkoutData) ? (
-                        <div className="space-y-2">
-                          <a
-                            href={getStripeCheckoutUrl(checkoutData)!}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full premium-button premium-button-brand py-4 text-sm flex items-center justify-center"
-                          >
-                            Pay with Card (Stripe)
-                          </a>
-                          <a
-                            href={getStripeCheckoutUrl(checkoutData)!}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full py-4 bg-black text-white rounded-2xl font-bold hover:bg-zinc-800 transition-all text-sm flex items-center justify-center"
-                          >
-                            Pay with Apple Pay / Google Pay
-                          </a>
-                        </div>
-                      ) : (
-                        <button className="w-full py-4 bg-zinc-200 text-zinc-500 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
-                          Stripe Checkout URL Not Configured
-                        </button>
-                      )}
+                      <div className="space-y-2">
+                        <a
+                          href={getStripeCheckoutUrl(checkoutData)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full premium-button premium-button-brand py-4 text-sm flex items-center justify-center"
+                        >
+                          Pay with Card (Stripe)
+                        </a>
+                        <a
+                          href={getStripeCheckoutUrl(checkoutData)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-4 bg-black text-white rounded-2xl font-bold hover:bg-zinc-800 transition-all text-sm flex items-center justify-center"
+                        >
+                          Pay with Apple Pay / Google Pay
+                        </a>
+                      </div>
                     </div>
                   )}
 
-                  {checkoutData.methods.paypal && (
+                  {getPaypalCheckoutUrl(checkoutData) && (
                     <div className="bg-white border border-black/[0.03] rounded-[2rem] p-6 shadow-sm">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100">
@@ -2071,20 +2053,14 @@ function MainApp() {
                         </div>
                         <h4 className="font-bold text-zinc-900">Pay via PayPal</h4>
                       </div>
-                      {getPaypalCheckoutUrl(checkoutData) ? (
-                        <a
-                          href={getPaypalCheckoutUrl(checkoutData)!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full py-4 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center"
-                        >
-                          PayPal Checkout
-                        </a>
-                      ) : (
-                        <button className="w-full py-4 bg-zinc-200 text-zinc-500 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
-                          PayPal Checkout URL Not Configured
-                        </button>
-                      )}
+                      <a
+                        href={getPaypalCheckoutUrl(checkoutData)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-4 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center"
+                      >
+                        PayPal Checkout
+                      </a>
                     </div>
                   )}
                 </div>

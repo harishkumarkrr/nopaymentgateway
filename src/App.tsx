@@ -472,8 +472,6 @@ function MainApp() {
   const getShareText = (product: PaymentPayload, productId: string) =>
     `Pay for ${product.itemName}\nAmount: ${product.currency} ${product.amount}\n${getShareUrl(productId)}`;
 
-  const openShareTarget = (url: string) => window.open(url, '_blank', 'noopener,noreferrer');
-
   const handleShareNative = async (product: PaymentPayload, productId: string) => {
     const shareUrl = getShareUrl(productId);
     const shareText = getShareText(product, productId);
@@ -486,25 +484,6 @@ function MainApp() {
     navigator.clipboard.writeText(shareUrl);
     setCopiedField(`share-${productId}`);
     setTimeout(() => setCopiedField(null), 2000);
-  };
-
-  const handleShareWhatsApp = (product: PaymentPayload, productId: string) => {
-    openShareTarget(`https://wa.me/?text=${encodeURIComponent(getShareText(product, productId))}`);
-  };
-
-  const handleShareTelegram = (product: PaymentPayload, productId: string) => {
-    const shareUrl = getShareUrl(productId);
-    const shareText = `Pay for ${product.itemName} (${product.currency} ${product.amount})`;
-    openShareTarget(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`);
-  };
-
-  const handleShareSms = (product: PaymentPayload, productId: string) => {
-    openShareTarget(`sms:?&body=${encodeURIComponent(getShareText(product, productId))}`);
-  };
-
-  const handleShareEmail = (product: PaymentPayload, productId: string) => {
-    const subject = `Payment Link: ${product.itemName}`;
-    openShareTarget(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(getShareText(product, productId))}`);
   };
 
   const PageHeader = () => {
@@ -1107,13 +1086,13 @@ function MainApp() {
                                       {currentStatus === 'active' ? 'Pause Link' : 'Activate Link'}
                                     </button>
                                   </div>
-                                  <div className="flex gap-2">
+                                  <div className="grid grid-cols-3 gap-2">
                                     <button 
                                       onClick={() => {
                                         setCheckoutData(product.data);
                                         setIsCheckoutOpen(true);
                                       }}
-                                      className="flex-1 py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
+                                      className="py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
                                     >
                                       <PlayCircle size={14} /> Preview
                                     </button>
@@ -1121,32 +1100,22 @@ function MainApp() {
                                       onClick={() => {
                                         const shareUrl = getShareUrl(product.id);
                                         navigator.clipboard.writeText(shareUrl);
-                                        setCopiedField(`share-${product.id}`);
+                                        setCopiedField(`copy-${product.id}`);
                                         setTimeout(() => setCopiedField(null), 2000);
                                       }}
-                                      className="flex-1 py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
+                                      className="py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
                                     >
-                                      {copiedField === `share-${product.id}` ? (
+                                      {copiedField === `copy-${product.id}` ? (
                                         <><Check size={14} className="text-emerald-500" /> Copied</>
                                       ) : (
-                                        <><Share2 size={14} /> Share</>
+                                        <><Copy size={14} /> Copy</>
                                       )}
                                     </button>
-                                  </div>
-                                  <div className="grid grid-cols-5 gap-2">
-                                    <button onClick={() => handleShareWhatsApp(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
-                                      WA
-                                    </button>
-                                    <button onClick={() => handleShareTelegram(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
-                                      TG
-                                    </button>
-                                    <button onClick={() => handleShareSms(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
-                                      SMS
-                                    </button>
-                                    <button onClick={() => handleShareEmail(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
-                                      Email
-                                    </button>
-                                    <button onClick={() => handleShareNative(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
+                                    <button
+                                      onClick={() => handleShareNative(product.data, product.id)}
+                                      className="py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
+                                    >
+                                      <Share2 size={14} />
                                       Share
                                     </button>
                                   </div>

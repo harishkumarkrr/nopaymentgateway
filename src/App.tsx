@@ -149,7 +149,7 @@ const isHttpUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
 const staticPageContent: Record<string, { title: string; content: string }> = {
   dashboard: {
     title: "Dashboard Overview",
-    content: "Welcome to your NoPaymentGateway.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
+    content: "Welcome to your NoPaymentsGateway.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
   },
   create: {
     title: "Create Product",
@@ -161,7 +161,7 @@ const staticPageContent: Record<string, { title: string; content: string }> = {
   },
   docs: {
     title: "Integration & API",
-    content: "Comprehensive documentation for integrating NoPaymentGateway.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
+    content: "Comprehensive documentation for integrating NoPaymentsGateway.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
   },
   contact: {
     title: "Contact Us",
@@ -186,7 +186,7 @@ For urgent production-impacting issues, mention "URGENT" in the email subject li
     content: `Effective Date: March 19, 2026
 
 1. Service Scope
-NoPaymentGateway.xyz provides tools to publish and share payment instruction links. We are not a payment processor, bank, wallet provider, money transmitter, or escrow service. Funds are transferred directly between payer and merchant through third-party rails selected by the merchant.
+NoPaymentsGateway.xyz provides tools to publish and share payment instruction links. We are not a payment processor, bank, wallet provider, money transmitter, or escrow service. Funds are transferred directly between payer and merchant through third-party rails selected by the merchant.
 
 2. Merchant Responsibility
 Merchants are solely responsible for:
@@ -208,7 +208,7 @@ You are responsible for keeping your account access secure and for all actions p
 We aim for reliable service but do not guarantee uninterrupted availability. Features may change, be updated, or be discontinued.
 
 7. Limitation of Liability
-To the maximum extent permitted by law, NoPaymentGateway.xyz is not liable for indirect, incidental, special, consequential, or punitive damages, or for loss of revenue/profits/data arising from use of the service.
+To the maximum extent permitted by law, NoPaymentsGateway.xyz is not liable for indirect, incidental, special, consequential, or punitive damages, or for loss of revenue/profits/data arising from use of the service.
 
 8. Termination
 We may suspend or terminate access for violations, abuse, legal obligations, or operational risk.
@@ -223,7 +223,7 @@ For legal or compliance concerns, contact: support@nopaymentsgateway.xyz`
     title: "Privacy Policy",
     content: `Effective Date: March 19, 2026
 
-NoPaymentGateway.xyz values your privacy. This policy explains what we collect, why we collect it, and how it is handled.
+NoPaymentsGateway.xyz values your privacy. This policy explains what we collect, why we collect it, and how it is handled.
 
 1. Information We Collect
 - Account data: name, email, authentication provider details
@@ -274,6 +274,15 @@ const getTabTitle = (tab: string) => {
   };
   return titleMap[tab] || (tab.charAt(0).toUpperCase() + tab.slice(1));
 };
+
+const BrandLogo = ({ className = "h-8 w-auto" }: { className?: string }) => (
+  <img
+    src="/nopaymentgateway_wordmark.svg"
+    alt="NoPaymentsGateway.xyz"
+    className={className}
+    referrerPolicy="no-referrer"
+  />
+);
 
 function MainApp() {
   const navigate = useNavigate();
@@ -333,7 +342,7 @@ function MainApp() {
   const [merchantName, setMerchantName] = useState('');
   const [itemName, setItemName] = useState('');
   const [amount, setAmount] = useState('120');
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('INR');
   
   const [upiId, setUpiId] = useState('');
   const [bankAcc, setBankAcc] = useState('');
@@ -489,6 +498,7 @@ function MainApp() {
       // Reset form
       setItemName('');
       setAmount('120');
+      setCurrency('INR');
       setCoverImage(null);
       setAutoExpire24h(false);
       
@@ -613,17 +623,14 @@ function MainApp() {
     return <div className="min-h-screen bg-white flex items-center justify-center text-zinc-900">Loading...</div>;
   }
 
-  if (!user && !['contact', 'terms', 'privacy', 'pay'].includes(activeTab)) {
+  if (!user && !['contact', 'terms', 'privacy', 'pay', 'docs'].includes(activeTab)) {
     return (
       <div className="min-h-screen bg-white text-zinc-900 selection:bg-emerald-500/30 font-sans overflow-y-auto flex flex-col">
         {/* Navigation */}
         <nav className="fixed top-0 w-full z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <CreditCard size={18} className="text-zinc-900" />
-              </div>
-              <span className="font-bold text-lg tracking-tight">NoPaymentGateway.xyz</span>
+              <BrandLogo className="h-8 w-auto" />
             </div>
             <div className="flex items-center gap-4">
               <button onClick={loginWithGoogle} className="text-sm font-medium hover:text-emerald-400 transition-colors">
@@ -693,17 +700,14 @@ function MainApp() {
         <footer className="border-t border-black/5 py-12 px-6 bg-zinc-50">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center">
-                <CreditCard size={14} className="text-white" />
-              </div>
-              <span className="font-bold text-sm tracking-tight">NoPaymentGateway.xyz</span>
+              <BrandLogo className="h-6 w-auto" />
             </div>
             <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-zinc-500">
               <Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link>
               <Link to="/terms" className="hover:text-emerald-400 transition-colors">Terms & Conditions</Link>
               <Link to="/privacy" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link>
             </div>
-            <p className="text-xs text-zinc-400">© 2026 NoPaymentGateway.xyz. All rights reserved.</p>
+            <p className="text-xs text-zinc-400">© 2026 NoPaymentsGateway.xyz. All rights reserved.</p>
           </div>
         </footer>
       </div>
@@ -723,10 +727,7 @@ function MainApp() {
           >
             <div className="p-6 flex items-center justify-between">
               <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <CreditCard size={18} className="text-zinc-900" />
-                </div>
-                <span className="font-bold text-lg tracking-tight text-zinc-900">NoPaymentGateway.xyz</span>
+                <BrandLogo className="h-8 w-auto" />
               </div>
               <button className="md:hidden text-zinc-500 hover:text-zinc-900" onClick={() => setIsSidebarOpen(false)}>
                 <X size={20} />
@@ -852,7 +853,7 @@ function MainApp() {
                       <div className="w-10 h-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
                         <ShieldCheck size={20} />
                       </div>
-                      <span className="text-xs font-black uppercase tracking-widest text-zinc-400">NoPaymentGateway.xyz</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-zinc-400">NoPaymentsGateway.xyz</span>
                     </div>
 
                     {hostedProduct.coverImage && (
@@ -1079,7 +1080,7 @@ function MainApp() {
                         <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption
                       </p>
                       <p className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
-                        Powered by NoPaymentGateway.xyz
+                        Powered by NoPaymentsGateway.xyz
                       </p>
                     </div>
                   </div>
@@ -1300,7 +1301,7 @@ function MainApp() {
                             type="text"
                             value={merchantName}
                             onChange={(e) => setMerchantName(e.target.value)}
-                            placeholder="e.g. NoPaymentGateway.xyz Store"
+                            placeholder="e.g. NoPaymentsGateway.xyz Store"
                             className="w-full px-5 py-4 bg-zinc-50 border border-black/[0.03] rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium"
                           />
                         </div>
@@ -1389,6 +1390,20 @@ function MainApp() {
                             placeholder="merchant@upi"
                             value={upiId}
                             onChange={(e) => setUpiId(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
+                          />
+                        </div>
+
+                        <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-4">
+                          <div className="flex items-center gap-3">
+                            <Bitcoin size={18} className="text-brand-500" />
+                            <span className="text-sm font-bold text-zinc-800">Crypto Wallet (Global)</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Wallet Address"
+                            value={cryptoAddress}
+                            onChange={(e) => setCryptoAddress(e.target.value)}
                             className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
                           />
                         </div>
@@ -1550,7 +1565,7 @@ function MainApp() {
                           <div className="w-2.5 h-2.5 rounded-full bg-zinc-300"></div>
                         </div>
                         <div className="mx-auto bg-white border border-black/[0.05] rounded-full px-4 py-1 text-[10px] text-zinc-400 font-mono flex items-center gap-2">
-                          <Lock size={10} /> nopaymentgateway.io/s/{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}
+                          <Lock size={10} /> nopaymentsgateway.xyz/s/{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}
                         </div>
                       </div>
 
@@ -1610,7 +1625,7 @@ function MainApp() {
                         </div>
                         <div>
                           <h4 className="text-lg font-bold text-zinc-900 mb-2">Test the Overlay</h4>
-                          <p className="text-sm text-zinc-500">Click the button below to trigger the NoPaymentGateway.xyz checkout overlay just as it would appear on your website.</p>
+                          <p className="text-sm text-zinc-500">Click the button below to trigger the NoPaymentsGateway.xyz checkout overlay just as it would appear on your website.</p>
                         </div>
                         <button 
                           disabled={!testProductId}
@@ -1838,7 +1853,7 @@ function MainApp() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-display font-bold text-zinc-900">Integration Guide</h2>
-                    <p className="text-sm text-zinc-500">How to add NoPaymentGateway.xyz to your website.</p>
+                    <p className="text-sm text-zinc-500">How to add NoPaymentsGateway.xyz to your website.</p>
                   </div>
                 </div>
                 
@@ -1846,7 +1861,7 @@ function MainApp() {
                   <section className="relative pl-10">
                     <div className="absolute left-0 top-0 w-8 h-8 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
                     <h3 className="text-lg font-bold text-zinc-900 mb-3">Create a Product</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Use the <span className="text-brand-600 font-bold cursor-pointer hover:underline" onClick={() => navigate('/create')}>Create</span> tab to define your product details and set your payment routing. NoPaymentGateway.xyz will securely host this data on the decentralized protocol.</p>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Use the <span className="text-brand-600 font-bold cursor-pointer hover:underline" onClick={() => navigate('/create')}>Create</span> tab to define your product details and set your payment routing. NoPaymentsGateway.xyz will securely host this data on the decentralized protocol.</p>
                   </section>
 
                   <section className="relative pl-10">
@@ -2077,7 +2092,7 @@ function MainApp() {
               
               <div className="bg-zinc-50 px-8 py-6 text-center border-t border-zinc-100">
                 <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                  <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption by NoPaymentGateway.xyz
+                  <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption by NoPaymentsGateway.xyz
                 </p>
               </div>
             </motion.div>

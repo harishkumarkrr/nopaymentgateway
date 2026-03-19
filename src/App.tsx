@@ -145,6 +145,8 @@ interface PaymentPayload {
   createdAt?: any;
 }
 
+const isHttpUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
+
 const staticPageContent: Record<string, { title: string; content: string }> = {
   dashboard: {
     title: "Dashboard Overview",
@@ -349,6 +351,14 @@ function MainApp() {
       setError('Please provide product name and amount.');
       return;
     }
+    if (stripeKey && !isHttpUrl(stripeKey)) {
+      setError('Please enter a valid Stripe Checkout URL (https://...).');
+      return;
+    }
+    if (paypalClientId && !isHttpUrl(paypalClientId)) {
+      setError('Please enter a valid PayPal Checkout URL (https://...).');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -412,6 +422,16 @@ function MainApp() {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const getStripeCheckoutUrl = (product: any) => {
+    const candidate = product?.methods?.stripe?.key || product?.stripe?.checkoutUrl || product?.stripe?.key;
+    return typeof candidate === 'string' && isHttpUrl(candidate) ? candidate : null;
+  };
+
+  const getPaypalCheckoutUrl = (product: any) => {
+    const candidate = product?.methods?.paypal?.clientId || product?.paypal?.checkoutUrl || product?.paypal?.clientId;
+    return typeof candidate === 'string' && isHttpUrl(candidate) ? candidate : null;
   };
 
   const PageHeader = () => {
@@ -844,9 +864,30 @@ function MainApp() {
                               </div>
                             </div>
                           </div>
-                          <button className="w-full premium-button premium-button-brand py-3 text-sm">
-                            Pay with Card
-                          </button>
+                          {getStripeCheckoutUrl(hostedProduct) ? (
+                            <div className="space-y-2">
+                              <a
+                                href={getStripeCheckoutUrl(hostedProduct)!}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full premium-button premium-button-brand py-3 text-sm flex items-center justify-center"
+                              >
+                                Pay with Card (Stripe)
+                              </a>
+                              <a
+                                href={getStripeCheckoutUrl(hostedProduct)!}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-3 bg-black text-white rounded-2xl font-bold hover:bg-zinc-800 transition-all text-sm flex items-center justify-center"
+                              >
+                                Pay with Apple Pay / Google Pay
+                              </a>
+                            </div>
+                          ) : (
+                            <button className="w-full py-3 bg-zinc-200 text-zinc-500 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
+                              Stripe Checkout URL Not Configured
+                            </button>
+                          )}
                         </div>
                       )}
 
@@ -863,9 +904,20 @@ function MainApp() {
                               </div>
                             </div>
                           </div>
-                          <button className="w-full py-3 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all text-sm">
-                            PayPal Checkout
-                          </button>
+                          {getPaypalCheckoutUrl(hostedProduct) ? (
+                            <a
+                              href={getPaypalCheckoutUrl(hostedProduct)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full py-3 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all text-sm flex items-center justify-center"
+                            >
+                              PayPal Checkout
+                            </a>
+                          ) : (
+                            <button className="w-full py-3 bg-zinc-200 text-zinc-500 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
+                              PayPal Checkout URL Not Configured
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1168,14 +1220,17 @@ function MainApp() {
                           </div>
                           <input
                             type="text"
-                            placeholder="Stripe Public Key"
+                            placeholder="Stripe Checkout / Payment Link URL"
                             value={stripeKey}
                             onChange={(e) => setStripeKey(e.target.value)}
                             className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm mb-2"
                           />
+                          <p className="text-[11px] text-zinc-500">
+                            Example: <span className="font-mono">https://buy.stripe.com/...</span> (do not paste Stripe public key)
+                          </p>
                           <input
                             type="text"
-                            placeholder="Stripe Price ID"
+                            placeholder="Optional: Stripe Price ID (reference only)"
                             value={stripePriceId}
                             onChange={(e) => setStripePriceId(e.target.value)}
                             className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
@@ -1189,11 +1244,14 @@ function MainApp() {
                           </div>
                           <input
                             type="text"
-                            placeholder="PayPal Client ID"
+                            placeholder="PayPal Checkout URL"
                             value={paypalClientId}
                             onChange={(e) => setPaypalClientId(e.target.value)}
                             className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
                           />
+                          <p className="text-[11px] text-zinc-500">
+                            Example: <span className="font-mono">https://www.paypal.com/checkoutnow?token=...</span>
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1734,9 +1792,30 @@ function MainApp() {
                         </div>
                         <h4 className="font-bold text-zinc-900">Pay via Stripe</h4>
                       </div>
-                      <button className="w-full premium-button premium-button-brand py-4 text-sm">
-                        Pay with Card
-                      </button>
+                      {getStripeCheckoutUrl(checkoutData) ? (
+                        <div className="space-y-2">
+                          <a
+                            href={getStripeCheckoutUrl(checkoutData)!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full premium-button premium-button-brand py-4 text-sm flex items-center justify-center"
+                          >
+                            Pay with Card (Stripe)
+                          </a>
+                          <a
+                            href={getStripeCheckoutUrl(checkoutData)!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-4 bg-black text-white rounded-2xl font-bold hover:bg-zinc-800 transition-all text-sm flex items-center justify-center"
+                          >
+                            Pay with Apple Pay / Google Pay
+                          </a>
+                        </div>
+                      ) : (
+                        <button className="w-full py-4 bg-zinc-200 text-zinc-500 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
+                          Stripe Checkout URL Not Configured
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -1748,9 +1827,20 @@ function MainApp() {
                         </div>
                         <h4 className="font-bold text-zinc-900">Pay via PayPal</h4>
                       </div>
-                      <button className="w-full py-4 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all shadow-lg shadow-blue-600/20 text-sm">
-                        PayPal Checkout
-                      </button>
+                      {getPaypalCheckoutUrl(checkoutData) ? (
+                        <a
+                          href={getPaypalCheckoutUrl(checkoutData)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-4 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center"
+                        >
+                          PayPal Checkout
+                        </a>
+                      ) : (
+                        <button className="w-full py-4 bg-zinc-200 text-zinc-500 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
+                          PayPal Checkout URL Not Configured
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

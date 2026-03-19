@@ -145,6 +145,37 @@ interface PaymentPayload {
   createdAt?: any;
 }
 
+const staticPageContent: Record<string, { title: string; content: string }> = {
+  dashboard: {
+    title: "Dashboard Overview",
+    content: "Welcome to your NoPaymentGateway.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
+  },
+  create: {
+    title: "Create Product",
+    content: "Generate a new payment link by providing product details and your preferred payment methods."
+  },
+  playground: {
+    title: "Playground",
+    content: "Experience your products in a live environment. Preview your hosted storefront and test how your checkout links behave when embedded into external websites."
+  },
+  docs: {
+    title: "Integration & API",
+    content: "Comprehensive documentation for integrating NoPaymentGateway.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
+  },
+  contact: {
+    title: "Contact Us",
+    content: "Get in touch with our team for any inquiries. Email us at support@nopaymentgateway.xyz or call us at 1-800-NOPAYMENT. Our support hours are Monday to Friday, 9 AM to 6 PM EST."
+  },
+  terms: {
+    title: "Terms and Conditions",
+    content: "By using NoPaymentGateway.xyz, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods."
+  },
+  privacy: {
+    title: "Privacy Policy",
+    content: "Your privacy is our priority. We collect only the necessary information required to process payments securely. We do not sell your personal data to third parties. All payment data is encrypted in transit and at rest."
+  }
+};
+
 function MainApp() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -193,29 +224,7 @@ function MainApp() {
   const [pageContent, setPageContent] = useState<{title: string, content: string} | null>(null);
 
   useEffect(() => {
-    if (['dashboard', 'create', 'playground', 'docs', 'contact', 'terms', 'privacy'].includes(activeTab)) {
-      console.log(`Fetching content for tab: ${activeTab}`);
-      setPageContent(null);
-      fetch('/api/' + activeTab)
-        .then(async res => {
-          if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`HTTP error! status: ${res.status}, body: ${text.substring(0, 100)}`);
-          }
-          return res.json();
-        })
-        .then(data => {
-          console.log(`Successfully loaded content for ${activeTab}`);
-          setPageContent(data);
-        })
-        .catch(err => {
-          console.error(`Failed to fetch content for ${activeTab}:`, err);
-          setPageContent({
-            title: "Error Loading Content",
-            content: "We encountered an issue while loading this page. Please try refreshing or contact support if the problem persists."
-          });
-        });
-    }
+    setPageContent(staticPageContent[activeTab] ?? null);
   }, [activeTab]);
 
   // Products State
@@ -822,7 +831,7 @@ function MainApp() {
                         </div>
                       )}
 
-                      {hostedProduct.methods.stripe && (
+                      {(hostedProduct.methods.stripe || (hostedProduct as any).stripe) && (
                         <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">
@@ -841,7 +850,7 @@ function MainApp() {
                         </div>
                       )}
 
-                      {hostedProduct.methods.paypal && (
+                      {(hostedProduct.methods.paypal || (hostedProduct as any).paypal) && (
                         <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">

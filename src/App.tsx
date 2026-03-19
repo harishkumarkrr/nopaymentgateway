@@ -143,6 +143,8 @@ interface PaymentPayload {
     paypal?: { clientId: string };
   };
   createdAt?: any;
+  status?: 'active' | 'paused';
+  expiresAt?: number | null;
 }
 
 const isHttpUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
@@ -245,6 +247,7 @@ function MainApp() {
   const [stripeKey, setStripeKey] = useState('');
   const [stripePriceId, setStripePriceId] = useState('');
   const [paypalClientId, setPaypalClientId] = useState('');
+  const [autoExpire24h, setAutoExpire24h] = useState(false);
   
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [resultProductId, setResultProductId] = useState<string | null>(null);
@@ -372,7 +375,9 @@ function MainApp() {
         currency,
         coverImage,
         methods: {},
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        status: 'active',
+        expiresAt: autoExpire24h ? Date.now() + (24 * 60 * 60 * 1000) : null
       };
 
       if (upiId) payload.methods.upi = upiId;
@@ -390,6 +395,7 @@ function MainApp() {
       setItemName('');
       setAmount('120');
       setCoverImage(null);
+      setAutoExpire24h(false);
       
       // Success feedback
       alert('Product created successfully! You can now find it in your dashboard.');
@@ -418,6 +424,34 @@ function MainApp() {
     setIsCheckoutOpen(true);
   };
 
+  const getExpiryMs = (expiresAt: unknown): number | null => {
+    if (!expiresAt) return null;
+    if (typeof expiresAt === 'number') return expiresAt;
+    if (typeof expiresAt === 'string') {
+      const parsed = Date.parse(expiresAt);
+      return Number.isNaN(parsed) ? null : parsed;
+    }
+    if (typeof (expiresAt as any)?.toMillis === 'function') {
+      return (expiresAt as any).toMillis();
+    }
+    return null;
+  };
+
+  const isProductActive = (product: PaymentPayload | null | undefined) => (product?.status ?? 'active') === 'active';
+  const isProductExpired = (product: PaymentPayload | null | undefined) => {
+    const expiryMs = getExpiryMs(product?.expiresAt);
+    return Boolean(expiryMs && Date.now() > expiryMs);
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: 'active' | 'paused') => {
+    try {
+      const nextStatus = currentStatus === 'active' ? 'paused' : 'active';
+      await setDoc(doc(db, 'products', id), { status: nextStatus }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `products/${id}`);
+    }
+  };
+
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
@@ -432,6 +466,45 @@ function MainApp() {
   const getPaypalCheckoutUrl = (product: any) => {
     const candidate = product?.methods?.paypal?.clientId || product?.paypal?.checkoutUrl || product?.paypal?.clientId;
     return typeof candidate === 'string' && isHttpUrl(candidate) ? candidate : null;
+  };
+
+  const getShareUrl = (productId: string) => `${window.location.origin}/pay/${productId}`;
+  const getShareText = (product: PaymentPayload, productId: string) =>
+    `Pay for ${product.itemName}\nAmount: ${product.currency} ${product.amount}\n${getShareUrl(productId)}`;
+
+  const openShareTarget = (url: string) => window.open(url, '_blank', 'noopener,noreferrer');
+
+  const handleShareNative = async (product: PaymentPayload, productId: string) => {
+    const shareUrl = getShareUrl(productId);
+    const shareText = getShareText(product, productId);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product.itemName, text: shareText, url: shareUrl });
+        return;
+      } catch {}
+    }
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedField(`share-${productId}`);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleShareWhatsApp = (product: PaymentPayload, productId: string) => {
+    openShareTarget(`https://wa.me/?text=${encodeURIComponent(getShareText(product, productId))}`);
+  };
+
+  const handleShareTelegram = (product: PaymentPayload, productId: string) => {
+    const shareUrl = getShareUrl(productId);
+    const shareText = `Pay for ${product.itemName} (${product.currency} ${product.amount})`;
+    openShareTarget(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`);
+  };
+
+  const handleShareSms = (product: PaymentPayload, productId: string) => {
+    openShareTarget(`sms:?&body=${encodeURIComponent(getShareText(product, productId))}`);
+  };
+
+  const handleShareEmail = (product: PaymentPayload, productId: string) => {
+    const subject = `Payment Link: ${product.itemName}`;
+    openShareTarget(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(getShareText(product, productId))}`);
   };
 
   const PageHeader = () => {
@@ -687,6 +760,16 @@ function MainApp() {
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
                   <p className="text-zinc-500 font-medium">Loading payment page...</p>
+                </div>
+              ) : hostedProduct && !isProductActive(hostedProduct) ? (
+                <div className="text-center max-w-xl">
+                  <h2 className="text-2xl font-black text-zinc-900 mb-2">Payment Link Is Not Active</h2>
+                  <p className="text-zinc-500">This payment link has been paused by the merchant. Please contact the merchant for an active link.</p>
+                </div>
+              ) : hostedProduct && isProductExpired(hostedProduct) ? (
+                <div className="text-center max-w-xl">
+                  <h2 className="text-2xl font-black text-zinc-900 mb-2">Payment Link Expired</h2>
+                  <p className="text-zinc-500">This payment link has expired. Please request a new link from the merchant.</p>
                 </div>
               ) : hostedProduct ? (
                 <motion.div 
@@ -967,7 +1050,10 @@ function MainApp() {
                 </div>
               ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                          {products.map((product) => (
+                          {products.map((product) => {
+                            const currentStatus = (product.data.status ?? 'active') as 'active' | 'paused';
+                            const expired = isProductExpired(product.data);
+                            return (
                             <motion.div 
                               layout
                               key={product.id} 
@@ -997,12 +1083,30 @@ function MainApp() {
                                     <h3 className="font-display font-bold text-zinc-900 text-lg leading-tight">{product.data.itemName}</h3>
                                     <p className="text-sm text-zinc-500 mt-1">{product.data.currency} {product.data.amount}</p>
                                   </div>
-                                  <div className="px-2 py-1 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded-md border border-brand-100">
-                                    Active
+                                  <div className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md border ${
+                                    expired
+                                      ? 'bg-red-50 text-red-700 border-red-100'
+                                      : currentStatus === 'active'
+                                      ? 'bg-brand-50 text-brand-700 border-brand-100'
+                                      : 'bg-amber-50 text-amber-700 border-amber-100'
+                                  }`}>
+                                    {expired ? 'Expired' : currentStatus === 'active' ? 'Active' : 'Paused'}
                                   </div>
                                 </div>
                                 
-                                <div className="mt-auto space-y-2">
+                                <div className="mt-auto space-y-3">
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => handleToggleStatus(product.id, currentStatus)}
+                                      className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-all ${
+                                        currentStatus === 'active'
+                                          ? 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100'
+                                          : 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                                      }`}
+                                    >
+                                      {currentStatus === 'active' ? 'Pause Link' : 'Activate Link'}
+                                    </button>
+                                  </div>
                                   <div className="flex gap-2">
                                     <button 
                                       onClick={() => {
@@ -1015,7 +1119,7 @@ function MainApp() {
                                     </button>
                                     <button 
                                       onClick={() => {
-                                        const shareUrl = `${window.location.origin}/pay/${product.id}`;
+                                        const shareUrl = getShareUrl(product.id);
                                         navigator.clipboard.writeText(shareUrl);
                                         setCopiedField(`share-${product.id}`);
                                         setTimeout(() => setCopiedField(null), 2000);
@@ -1029,6 +1133,23 @@ function MainApp() {
                                       )}
                                     </button>
                                   </div>
+                                  <div className="grid grid-cols-5 gap-2">
+                                    <button onClick={() => handleShareWhatsApp(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
+                                      WA
+                                    </button>
+                                    <button onClick={() => handleShareTelegram(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
+                                      TG
+                                    </button>
+                                    <button onClick={() => handleShareSms(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
+                                      SMS
+                                    </button>
+                                    <button onClick={() => handleShareEmail(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
+                                      Email
+                                    </button>
+                                    <button onClick={() => handleShareNative(product.data, product.id)} className="py-2 rounded-xl border border-black/[0.05] text-[10px] font-bold hover:bg-black/[0.02] transition-all">
+                                      Share
+                                    </button>
+                                  </div>
                                   <button 
                                     onClick={() => copyToClipboard(`<script src="${window.location.origin}/embed.js" async></script>\n<div data-nopaymentgateway-id="${product.id}"></div>`, product.id)}
                                     className="w-full py-2 bg-zinc-50 hover:bg-zinc-100 border border-black/[0.03] rounded-xl text-[10px] font-bold text-zinc-500 flex items-center justify-center gap-2 transition-all"
@@ -1039,7 +1160,7 @@ function MainApp() {
                                 </div>
                               </div>
                             </motion.div>
-                          ))}
+                          )})}
                         </div>
               )}
             </motion.div>
@@ -1251,6 +1372,21 @@ function MainApp() {
                           />
                           <p className="text-[11px] text-zinc-500">
                             Example: <span className="font-mono">https://www.paypal.com/checkoutnow?token=...</span>
+                          </p>
+                        </div>
+
+                        <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-3">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={autoExpire24h}
+                              onChange={(e) => setAutoExpire24h(e.target.checked)}
+                              className="w-4 h-4 accent-brand-600"
+                            />
+                            <span className="text-sm font-bold text-zinc-800">Auto Expiry (24 hours)</span>
+                          </label>
+                          <p className="text-[11px] text-zinc-500">
+                            When enabled, this payment link automatically expires 24 hours after creation.
                           </p>
                         </div>
                       </div>

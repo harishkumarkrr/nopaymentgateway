@@ -28,11 +28,8 @@ import {
   User as UserIcon,
   ChevronRight,
   Mail,
-  Phone,
-  MapPin,
   Calendar,
   Shield,
-  Key,
   Share2,
   PlusCircle,
   PlayCircle,
@@ -143,7 +140,149 @@ interface PaymentPayload {
     paypal?: { clientId: string };
   };
   createdAt?: any;
+  status?: 'active' | 'paused';
+  expiresAt?: number | null;
 }
+
+const isHttpUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
+
+const staticPageContent: Record<string, { title: string; content: string }> = {
+  dashboard: {
+    title: "Dashboard Overview",
+    content: "Welcome to your NoPaymentsGateway.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
+  },
+  create: {
+    title: "Create Product",
+    content: "Generate a new payment link by providing product details and your preferred payment methods."
+  },
+  playground: {
+    title: "Playground",
+    content: "Experience your products in a live environment. Preview your hosted storefront and test how your checkout links behave when embedded into external websites."
+  },
+  docs: {
+    title: "Integration & API",
+    content: "Comprehensive documentation for integrating NoPaymentsGateway.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
+  },
+  contact: {
+    title: "Contact Us",
+    content: `Need help with your payment links, merchant account setup, or link verification process? We are here to help.
+
+Support Email: support@nopaymentsgateway.xyz
+Response Time: Within 1 business day
+
+When contacting support, include:
+- Your registered email address
+- Product/link ID (if applicable)
+- A short description of the issue
+- Screenshot or error message (if available)
+
+Business Hours:
+Monday to Friday, 9:00 AM to 6:00 PM IST
+
+For urgent production-impacting issues, mention "URGENT" in the email subject line.`
+  },
+  terms: {
+    title: "Terms and Conditions",
+    content: `Effective Date: March 19, 2026
+
+1. Service Scope
+NoPaymentsGateway.xyz provides tools to publish and share payment instruction links. We are not a payment processor, bank, wallet provider, money transmitter, or escrow service. Funds are transferred directly between payer and merchant through third-party rails selected by the merchant.
+
+2. Merchant Responsibility
+Merchants are solely responsible for:
+- Accuracy of payment details and amounts
+- Delivery of goods/services
+- Tax, invoicing, and legal compliance in their jurisdiction
+- Customer support, refund, and dispute handling
+
+3. User Conduct
+You agree not to use the platform for unlawful, fraudulent, misleading, harmful, or prohibited activities. We may suspend or remove access for abuse, policy violations, or legal risk.
+
+4. No Transaction Liability
+Because payments happen outside our platform, we do not control or guarantee payment completion, reversals, chargebacks, settlement timelines, or payer/merchant disputes.
+
+5. Data and Account Security
+You are responsible for keeping your account access secure and for all actions performed through your account.
+
+6. Availability
+We aim for reliable service but do not guarantee uninterrupted availability. Features may change, be updated, or be discontinued.
+
+7. Limitation of Liability
+To the maximum extent permitted by law, NoPaymentsGateway.xyz is not liable for indirect, incidental, special, consequential, or punitive damages, or for loss of revenue/profits/data arising from use of the service.
+
+8. Termination
+We may suspend or terminate access for violations, abuse, legal obligations, or operational risk.
+
+9. Governing Law
+These terms are governed by applicable local laws based on the merchant’s operating jurisdiction unless otherwise required by law.
+
+10. Contact
+For legal or compliance concerns, contact: support@nopaymentsgateway.xyz`
+  },
+  privacy: {
+    title: "Privacy Policy",
+    content: `Effective Date: March 19, 2026
+
+NoPaymentsGateway.xyz values your privacy. This policy explains what we collect, why we collect it, and how it is handled.
+
+1. Information We Collect
+- Account data: name, email, authentication provider details
+- Merchant content: product names, payment instructions, pricing, media assets
+- Technical data: device/browser metadata, logs, diagnostics, and security events
+
+2. How We Use Data
+- To operate and secure the platform
+- To provide support and resolve issues
+- To prevent abuse, fraud, and policy violations
+- To improve product performance and reliability
+
+3. Payment Data Scope
+Payments are executed outside our platform via merchant-provided methods. We do not process card transactions directly unless explicitly integrated with a third-party processor by the merchant.
+
+4. Data Sharing
+We do not sell personal data. Data may be shared only with infrastructure/service providers required to run the product, or when legally required.
+
+5. Data Retention
+We retain data for as long as needed to provide services, comply with legal obligations, and resolve disputes.
+
+6. Security
+We apply reasonable administrative and technical safeguards, but no system is completely risk-free.
+
+7. Your Rights
+You may request access, correction, or deletion of personal data, subject to legal and operational limits.
+
+8. Children
+The platform is not intended for children under 18.
+
+9. Contact
+Privacy requests and concerns: support@nopaymentsgateway.xyz`
+  }
+};
+
+const getTabTitle = (tab: string) => {
+  const titleMap: Record<string, string> = {
+    dashboard: 'Dashboard',
+    create: 'Create Product',
+    playground: 'Playground',
+    docs: 'Integration & API',
+    contact: 'Contact',
+    terms: 'Terms & Conditions',
+    privacy: 'Privacy Policy',
+    profile: 'Profile Settings',
+    security: 'Security',
+    pay: 'Payment Link'
+  };
+  return titleMap[tab] || (tab.charAt(0).toUpperCase() + tab.slice(1));
+};
+
+const BrandLogo = ({ className = "h-10 w-auto max-w-[280px]" }: { className?: string }) => (
+  <img
+    src="/nopaymentgateway_wordmark_v2.svg"
+    alt="NoPaymentsGateway.xyz"
+    className={`${className} object-contain`}
+    referrerPolicy="no-referrer"
+  />
+);
 
 function MainApp() {
   const navigate = useNavigate();
@@ -193,29 +332,7 @@ function MainApp() {
   const [pageContent, setPageContent] = useState<{title: string, content: string} | null>(null);
 
   useEffect(() => {
-    if (['dashboard', 'create', 'playground', 'docs', 'contact', 'terms', 'privacy'].includes(activeTab)) {
-      console.log(`Fetching content for tab: ${activeTab}`);
-      setPageContent(null);
-      fetch('/api/' + activeTab)
-        .then(async res => {
-          if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`HTTP error! status: ${res.status}, body: ${text.substring(0, 100)}`);
-          }
-          return res.json();
-        })
-        .then(data => {
-          console.log(`Successfully loaded content for ${activeTab}`);
-          setPageContent(data);
-        })
-        .catch(err => {
-          console.error(`Failed to fetch content for ${activeTab}:`, err);
-          setPageContent({
-            title: "Error Loading Content",
-            content: "We encountered an issue while loading this page. Please try refreshing or contact support if the problem persists."
-          });
-        });
-    }
+    setPageContent(staticPageContent[activeTab] ?? null);
   }, [activeTab]);
 
   // Products State
@@ -225,7 +342,7 @@ function MainApp() {
   const [merchantName, setMerchantName] = useState('');
   const [itemName, setItemName] = useState('');
   const [amount, setAmount] = useState('120');
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('INR');
   
   const [upiId, setUpiId] = useState('');
   const [bankAcc, setBankAcc] = useState('');
@@ -234,6 +351,7 @@ function MainApp() {
   const [stripeKey, setStripeKey] = useState('');
   const [stripePriceId, setStripePriceId] = useState('');
   const [paypalClientId, setPaypalClientId] = useState('');
+  const [autoExpire24h, setAutoExpire24h] = useState(false);
   
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [resultProductId, setResultProductId] = useState<string | null>(null);
@@ -340,6 +458,14 @@ function MainApp() {
       setError('Please provide product name and amount.');
       return;
     }
+    if (stripeKey && !isHttpUrl(stripeKey)) {
+      setError('Please enter a valid Stripe Checkout URL (https://...).');
+      return;
+    }
+    if (paypalClientId && !isHttpUrl(paypalClientId)) {
+      setError('Please enter a valid PayPal Checkout URL (https://...).');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -353,7 +479,9 @@ function MainApp() {
         currency,
         coverImage,
         methods: {},
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        status: 'active',
+        expiresAt: autoExpire24h ? Date.now() + (24 * 60 * 60 * 1000) : null
       };
 
       if (upiId) payload.methods.upi = upiId;
@@ -370,7 +498,9 @@ function MainApp() {
       // Reset form
       setItemName('');
       setAmount('120');
+      setCurrency('INR');
       setCoverImage(null);
+      setAutoExpire24h(false);
       
       // Success feedback
       alert('Product created successfully! You can now find it in your dashboard.');
@@ -399,9 +529,65 @@ function MainApp() {
     setIsCheckoutOpen(true);
   };
 
+  const getExpiryMs = (expiresAt: unknown): number | null => {
+    if (!expiresAt) return null;
+    if (typeof expiresAt === 'number') return expiresAt;
+    if (typeof expiresAt === 'string') {
+      const parsed = Date.parse(expiresAt);
+      return Number.isNaN(parsed) ? null : parsed;
+    }
+    if (typeof (expiresAt as any)?.toMillis === 'function') {
+      return (expiresAt as any).toMillis();
+    }
+    return null;
+  };
+
+  const isProductActive = (product: PaymentPayload | null | undefined) => (product?.status ?? 'active') === 'active';
+  const isProductExpired = (product: PaymentPayload | null | undefined) => {
+    const expiryMs = getExpiryMs(product?.expiresAt);
+    return Boolean(expiryMs && Date.now() > expiryMs);
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: 'active' | 'paused') => {
+    try {
+      const nextStatus = currentStatus === 'active' ? 'paused' : 'active';
+      await setDoc(doc(db, 'products', id), { status: nextStatus }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `products/${id}`);
+    }
+  };
+
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const getStripeCheckoutUrl = (product: any) => {
+    const candidate = product?.methods?.stripe?.key || product?.stripe?.checkoutUrl || product?.stripe?.key;
+    return typeof candidate === 'string' && isHttpUrl(candidate) ? candidate : null;
+  };
+
+  const getPaypalCheckoutUrl = (product: any) => {
+    const candidate = product?.methods?.paypal?.clientId || product?.paypal?.checkoutUrl || product?.paypal?.clientId;
+    return typeof candidate === 'string' && isHttpUrl(candidate) ? candidate : null;
+  };
+
+  const getShareUrl = (productId: string) => `${window.location.origin}/pay/${productId}`;
+  const getShareText = (product: PaymentPayload, productId: string) =>
+    `Pay for ${product.itemName}\nAmount: ${product.currency} ${product.amount}\n${getShareUrl(productId)}`;
+
+  const handleShareNative = async (product: PaymentPayload, productId: string) => {
+    const shareUrl = getShareUrl(productId);
+    const shareText = getShareText(product, productId);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product.itemName, text: shareText, url: shareUrl });
+        return;
+      } catch {}
+    }
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedField(`share-${productId}`);
     setTimeout(() => setCopiedField(null), 2000);
   };
 
@@ -437,17 +623,14 @@ function MainApp() {
     return <div className="min-h-screen bg-white flex items-center justify-center text-zinc-900">Loading...</div>;
   }
 
-  if (!user && !['contact', 'terms', 'privacy', 'pay'].includes(activeTab)) {
+  if (!user && !['contact', 'terms', 'privacy', 'pay', 'docs'].includes(activeTab)) {
     return (
       <div className="min-h-screen bg-white text-zinc-900 selection:bg-emerald-500/30 font-sans overflow-y-auto flex flex-col">
         {/* Navigation */}
         <nav className="fixed top-0 w-full z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <CreditCard size={18} className="text-zinc-900" />
-              </div>
-              <span className="font-bold text-lg tracking-tight">NoPaymentGateway.xyz</span>
+              <BrandLogo className="h-12 w-auto max-w-[320px]" />
             </div>
             <div className="flex items-center gap-4">
               <button onClick={loginWithGoogle} className="text-sm font-medium hover:text-emerald-400 transition-colors">
@@ -517,17 +700,14 @@ function MainApp() {
         <footer className="border-t border-black/5 py-12 px-6 bg-zinc-50">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center">
-                <CreditCard size={14} className="text-white" />
-              </div>
-              <span className="font-bold text-sm tracking-tight">NoPaymentGateway.xyz</span>
+              <BrandLogo className="h-8 w-auto max-w-[220px]" />
             </div>
             <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-zinc-500">
               <Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link>
               <Link to="/terms" className="hover:text-emerald-400 transition-colors">Terms & Conditions</Link>
               <Link to="/privacy" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link>
             </div>
-            <p className="text-xs text-zinc-400">© 2026 NoPaymentGateway.xyz. All rights reserved.</p>
+            <p className="text-xs text-zinc-400">© 2026 NoPaymentsGateway.xyz. All rights reserved.</p>
           </div>
         </footer>
       </div>
@@ -547,10 +727,7 @@ function MainApp() {
           >
             <div className="p-6 flex items-center justify-between">
               <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <CreditCard size={18} className="text-zinc-900" />
-                </div>
-                <span className="font-bold text-lg tracking-tight text-zinc-900">NoPaymentGateway.xyz</span>
+                <BrandLogo className="h-10 w-auto max-w-[280px]" />
               </div>
               <button className="md:hidden text-zinc-500 hover:text-zinc-900" onClick={() => setIsSidebarOpen(false)}>
                 <X size={20} />
@@ -636,12 +813,7 @@ function MainApp() {
               </button>
             )}
             <h1 className="font-display font-bold text-zinc-900 text-xl">
-              {activeTab === 'create' ? 'Create Product' : 
-               activeTab === 'playground' ? 'Playground' : 
-               activeTab === 'contact' ? 'Contact' :
-               activeTab === 'terms' ? 'Terms & Conditions' :
-               activeTab === 'privacy' ? 'Privacy Policy' :
-               activeTab}
+              {getTabTitle(activeTab)}
             </h1>
           </div>
           <div className="flex items-center gap-4">
@@ -659,6 +831,16 @@ function MainApp() {
                   <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
                   <p className="text-zinc-500 font-medium">Loading payment page...</p>
                 </div>
+              ) : hostedProduct && !isProductActive(hostedProduct) ? (
+                <div className="text-center max-w-xl">
+                  <h2 className="text-2xl font-black text-zinc-900 mb-2">Payment Link Is Not Active</h2>
+                  <p className="text-zinc-500">This payment link has been paused by the merchant. Please contact the merchant for an active link.</p>
+                </div>
+              ) : hostedProduct && isProductExpired(hostedProduct) ? (
+                <div className="text-center max-w-xl">
+                  <h2 className="text-2xl font-black text-zinc-900 mb-2">Payment Link Expired</h2>
+                  <p className="text-zinc-500">This payment link has expired. Please request a new link from the merchant.</p>
+                </div>
               ) : hostedProduct ? (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
@@ -671,7 +853,7 @@ function MainApp() {
                       <div className="w-10 h-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
                         <ShieldCheck size={20} />
                       </div>
-                      <span className="text-xs font-black uppercase tracking-widest text-zinc-400">NoPaymentGateway.xyz</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-zinc-400">NoPaymentsGateway.xyz</span>
                     </div>
 
                     {hostedProduct.coverImage && (
@@ -733,6 +915,16 @@ function MainApp() {
                             </div>
                             <ChevronRight size={20} className="text-zinc-300 group-hover:text-emerald-500 transition-colors" />
                           </div>
+                          <div className="flex justify-center mb-4">
+                            <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
+                              <img
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${hostedProduct.methods.upi}&pn=${encodeURIComponent(hostedProduct.merchantName)}&am=${hostedProduct.amount}&cu=${hostedProduct.currency}`)}`}
+                                alt="UPI QR Code"
+                                className="w-40 h-40"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                          </div>
                           <div className="bg-zinc-50 p-4 rounded-2xl border border-black/[0.02] flex items-center justify-between">
                             <code className="text-xs font-bold text-zinc-600">{hostedProduct.methods.upi}</code>
                             <button 
@@ -746,6 +938,12 @@ function MainApp() {
                               {copiedField === 'upi' ? <Check size={16} /> : <Copy size={16} />}
                             </button>
                           </div>
+                          <a
+                            href={`upi://pay?pa=${hostedProduct.methods.upi}&pn=${encodeURIComponent(hostedProduct.merchantName)}&am=${hostedProduct.amount}&cu=${hostedProduct.currency}`}
+                            className="mt-4 w-full premium-button premium-button-brand py-3 text-sm flex items-center justify-center"
+                          >
+                            Open UPI App
+                          </a>
                         </div>
                       )}
 
@@ -805,6 +1003,64 @@ function MainApp() {
                           </div>
                         </div>
                       )}
+
+                      {getStripeCheckoutUrl(hostedProduct) && (
+                        <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center border border-violet-100 group-hover:bg-violet-500 transition-colors">
+                                <CreditCard size={24} className="text-violet-600 group-hover:text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-zinc-900">Card Payment</h4>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Powered by Stripe</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <a
+                              href={getStripeCheckoutUrl(hostedProduct)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full premium-button premium-button-brand py-3 text-sm flex items-center justify-center"
+                            >
+                              Pay with Card (Stripe)
+                            </a>
+                            <a
+                              href={getStripeCheckoutUrl(hostedProduct)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full py-3 bg-black text-white rounded-2xl font-bold hover:bg-zinc-800 transition-all text-sm flex items-center justify-center"
+                            >
+                              Pay with Apple Pay / Google Pay
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      {getPaypalCheckoutUrl(hostedProduct) && (
+                        <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 group-hover:bg-blue-500 transition-colors">
+                                <Wallet size={24} className="text-blue-600 group-hover:text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-zinc-900">PayPal</h4>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">PayPal Checkout</p>
+                              </div>
+                            </div>
+                          </div>
+                          <a
+                            href={getPaypalCheckoutUrl(hostedProduct)!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-3 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all text-sm flex items-center justify-center"
+                          >
+                            PayPal Checkout
+                          </a>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-12 text-center">
@@ -812,7 +1068,7 @@ function MainApp() {
                         <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption
                       </p>
                       <p className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
-                        Powered by NoPaymentGateway.xyz
+                        Powered by NoPaymentsGateway.xyz
                       </p>
                     </div>
                   </div>
@@ -852,7 +1108,10 @@ function MainApp() {
                 </div>
               ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                          {products.map((product) => (
+                          {products.map((product) => {
+                            const currentStatus = (product.data.status ?? 'active') as 'active' | 'paused';
+                            const expired = isProductExpired(product.data);
+                            return (
                             <motion.div 
                               layout
                               key={product.id} 
@@ -882,36 +1141,61 @@ function MainApp() {
                                     <h3 className="font-display font-bold text-zinc-900 text-lg leading-tight">{product.data.itemName}</h3>
                                     <p className="text-sm text-zinc-500 mt-1">{product.data.currency} {product.data.amount}</p>
                                   </div>
-                                  <div className="px-2 py-1 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded-md border border-brand-100">
-                                    Active
+                                  <div className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md border ${
+                                    expired
+                                      ? 'bg-red-50 text-red-700 border-red-100'
+                                      : currentStatus === 'active'
+                                      ? 'bg-brand-50 text-brand-700 border-brand-100'
+                                      : 'bg-amber-50 text-amber-700 border-amber-100'
+                                  }`}>
+                                    {expired ? 'Expired' : currentStatus === 'active' ? 'Active' : 'Paused'}
                                   </div>
                                 </div>
                                 
-                                <div className="mt-auto space-y-2">
+                                <div className="mt-auto space-y-3">
                                   <div className="flex gap-2">
+                                    <button
+                                      onClick={() => handleToggleStatus(product.id, currentStatus)}
+                                      className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-all ${
+                                        currentStatus === 'active'
+                                          ? 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100'
+                                          : 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                                      }`}
+                                    >
+                                      {currentStatus === 'active' ? 'Pause Link' : 'Activate Link'}
+                                    </button>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-2">
                                     <button 
                                       onClick={() => {
                                         setCheckoutData(product.data);
                                         setIsCheckoutOpen(true);
                                       }}
-                                      className="flex-1 py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
+                                      className="py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
                                     >
                                       <PlayCircle size={14} /> Preview
                                     </button>
                                     <button 
                                       onClick={() => {
-                                        const shareUrl = `${window.location.origin}/pay/${product.id}`;
+                                        const shareUrl = getShareUrl(product.id);
                                         navigator.clipboard.writeText(shareUrl);
-                                        setCopiedField(`share-${product.id}`);
+                                        setCopiedField(`copy-${product.id}`);
                                         setTimeout(() => setCopiedField(null), 2000);
                                       }}
-                                      className="flex-1 py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
+                                      className="py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
                                     >
-                                      {copiedField === `share-${product.id}` ? (
+                                      {copiedField === `copy-${product.id}` ? (
                                         <><Check size={14} className="text-emerald-500" /> Copied</>
                                       ) : (
-                                        <><Share2 size={14} /> Share</>
+                                        <><Copy size={14} /> Copy</>
                                       )}
+                                    </button>
+                                    <button
+                                      onClick={() => handleShareNative(product.data, product.id)}
+                                      className="py-2 rounded-xl border border-black/[0.05] text-xs font-bold hover:bg-black/[0.02] transition-all flex items-center justify-center gap-2"
+                                    >
+                                      <Share2 size={14} />
+                                      Share
                                     </button>
                                   </div>
                                   <button 
@@ -924,7 +1208,7 @@ function MainApp() {
                                 </div>
                               </div>
                             </motion.div>
-                          ))}
+                          )})}
                         </div>
               )}
             </motion.div>
@@ -1005,7 +1289,7 @@ function MainApp() {
                             type="text"
                             value={merchantName}
                             onChange={(e) => setMerchantName(e.target.value)}
-                            placeholder="e.g. NoPaymentGateway.xyz Store"
+                            placeholder="e.g. NoPaymentsGateway.xyz Store"
                             className="w-full px-5 py-4 bg-zinc-50 border border-black/[0.03] rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium"
                           />
                         </div>
@@ -1100,19 +1384,36 @@ function MainApp() {
 
                         <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-4">
                           <div className="flex items-center gap-3">
+                            <Bitcoin size={18} className="text-brand-500" />
+                            <span className="text-sm font-bold text-zinc-800">Crypto Wallet (Global)</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Wallet Address"
+                            value={cryptoAddress}
+                            onChange={(e) => setCryptoAddress(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
+                          />
+                        </div>
+
+                        <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-4">
+                          <div className="flex items-center gap-3">
                             <CreditCard size={18} className="text-brand-500" />
                             <span className="text-sm font-bold text-zinc-800">Stripe (Global)</span>
                           </div>
                           <input
                             type="text"
-                            placeholder="Stripe Public Key"
+                            placeholder="Stripe Checkout / Payment Link URL"
                             value={stripeKey}
                             onChange={(e) => setStripeKey(e.target.value)}
                             className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm mb-2"
                           />
+                          <p className="text-[11px] text-zinc-500">
+                            Example: <span className="font-mono">https://buy.stripe.com/...</span> (do not paste Stripe public key)
+                          </p>
                           <input
                             type="text"
-                            placeholder="Stripe Price ID"
+                            placeholder="Optional: Stripe Price ID (reference only)"
                             value={stripePriceId}
                             onChange={(e) => setStripePriceId(e.target.value)}
                             className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
@@ -1126,11 +1427,29 @@ function MainApp() {
                           </div>
                           <input
                             type="text"
-                            placeholder="PayPal Client ID"
+                            placeholder="PayPal Checkout URL"
                             value={paypalClientId}
                             onChange={(e) => setPaypalClientId(e.target.value)}
                             className="w-full px-4 py-3 bg-white border border-black/[0.05] rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm"
                           />
+                          <p className="text-[11px] text-zinc-500">
+                            Example: <span className="font-mono">https://www.paypal.com/checkoutnow?token=...</span>
+                          </p>
+                        </div>
+
+                        <div className="p-6 rounded-3xl bg-zinc-50 border border-black/[0.03] space-y-3">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={autoExpire24h}
+                              onChange={(e) => setAutoExpire24h(e.target.checked)}
+                              className="w-4 h-4 accent-brand-600"
+                            />
+                            <span className="text-sm font-bold text-zinc-800">Auto Expiry (24 hours)</span>
+                          </label>
+                          <p className="text-[11px] text-zinc-500">
+                            When enabled, this payment link automatically expires 24 hours after creation.
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1234,7 +1553,7 @@ function MainApp() {
                           <div className="w-2.5 h-2.5 rounded-full bg-zinc-300"></div>
                         </div>
                         <div className="mx-auto bg-white border border-black/[0.05] rounded-full px-4 py-1 text-[10px] text-zinc-400 font-mono flex items-center gap-2">
-                          <Lock size={10} /> nopaymentgateway.io/s/{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}
+                          <Lock size={10} /> nopaymentsgateway.xyz/s/{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}
                         </div>
                       </div>
 
@@ -1294,7 +1613,7 @@ function MainApp() {
                         </div>
                         <div>
                           <h4 className="text-lg font-bold text-zinc-900 mb-2">Test the Overlay</h4>
-                          <p className="text-sm text-zinc-500">Click the button below to trigger the NoPaymentGateway.xyz checkout overlay just as it would appear on your website.</p>
+                          <p className="text-sm text-zinc-500">Click the button below to trigger the NoPaymentsGateway.xyz checkout overlay just as it would appear on your website.</p>
                         </div>
                         <button 
                           disabled={!testProductId}
@@ -1343,7 +1662,7 @@ function MainApp() {
                   </div>
                   <div>
                     <h2 className="text-3xl font-display font-bold text-zinc-900 mb-2">{user.displayName}</h2>
-                    <p className="text-zinc-500 font-medium">Manage your personal information and account preferences.</p>
+                    <p className="text-zinc-500 font-medium">Account identity and verification details.</p>
                   </div>
                 </div>
 
@@ -1363,39 +1682,65 @@ function MainApp() {
                         <span className="text-zinc-900 font-medium">{user.email}</span>
                       </div>
                     </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Email Verification</label>
+                      <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
+                        <Shield size={18} className="text-zinc-400" />
+                        <span className={`font-medium ${user.emailVerified ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {user.emailVerified ? 'Verified' : 'Not Verified'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-6">
                     <div>
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Phone Number</label>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">User ID</label>
                       <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
-                        <Phone size={18} className="text-zinc-400" />
-                        <span className="text-zinc-500 italic">Not provided</span>
+                        <code className="text-zinc-700 text-xs font-mono break-all flex-1">{user.uid}</code>
+                        <button
+                          onClick={() => copyToClipboard(user.uid, 'uid')}
+                          className="text-brand-600 hover:text-brand-700"
+                          title="Copy User ID"
+                        >
+                          {copiedField === 'uid' ? <Check size={14} /> : <Copy size={14} />}
+                        </button>
                       </div>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Location</label>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 block">Sign-in Provider</label>
                       <div className="flex items-center gap-3 p-4 bg-zinc-50 border border-black/[0.03] rounded-2xl">
-                        <MapPin size={18} className="text-zinc-400" />
-                        <span className="text-zinc-500 italic">Not set</span>
+                        <span className="text-zinc-900 font-medium">
+                          {user.providerData.length > 0 ? user.providerData.map((p) => p.providerId).join(', ') : 'Unknown'}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-10 pt-10 border-t border-zinc-100">
-                  <div className="flex items-center justify-between p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
-                    <div className="flex items-center gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-4 p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
                         <Calendar size={20} className="text-emerald-600" />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-emerald-900">Account Created</p>
-                        <p className="text-xs text-emerald-600 font-medium">Member since March 2026</p>
+                        <p className="text-xs text-emerald-600 font-medium">
+                          {user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleString() : 'Unavailable'}
+                        </p>
                       </div>
                     </div>
-                    <button className="px-6 py-2 bg-white text-emerald-600 rounded-xl text-sm font-bold shadow-sm hover:bg-emerald-50 transition-colors">
-                      View Activity
-                    </button>
+                    <div className="flex items-center gap-4 p-6 bg-zinc-50 rounded-3xl border border-black/[0.03]">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                        <ShieldCheck size={20} className="text-zinc-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-zinc-900">Last Sign-in</p>
+                        <p className="text-xs text-zinc-600 font-medium">
+                          {user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'Unavailable'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1412,67 +1757,75 @@ function MainApp() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-display font-bold text-zinc-900">Security Settings</h2>
-                    <p className="text-sm text-zinc-500">Protect your account with advanced security features.</p>
+                    <p className="text-sm text-zinc-500">Current account security status and recommended actions.</p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl group hover:border-brand-500/20 transition-all">
+                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                        <Key size={20} className="text-zinc-400 group-hover:text-brand-600" />
+                        <ShieldCheck size={20} className="text-zinc-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-zinc-900">Two-Factor Authentication</p>
-                        <p className="text-xs text-zinc-500">Add an extra layer of security to your account.</p>
+                        <p className="text-sm font-bold text-zinc-900">Authentication Provider</p>
+                        <p className="text-xs text-zinc-500">
+                          {user.providerData.length > 0 ? user.providerData.map((p) => p.providerId).join(', ') : 'Unknown'}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 bg-zinc-200 text-zinc-600 text-[10px] font-bold uppercase rounded-full">Disabled</span>
-                      <button className="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold hover:bg-brand-700 transition-colors">
-                        Enable
-                      </button>
+                    <div className="px-3 py-1 bg-emerald-500/20 text-emerald-700 text-[10px] font-bold uppercase rounded-full">
+                      Active
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl group hover:border-brand-500/20 transition-all">
+                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                        <Smartphone size={20} className="text-zinc-400 group-hover:text-brand-600" />
+                        <Mail size={20} className="text-zinc-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-zinc-900">Login Notifications</p>
-                        <p className="text-xs text-zinc-500">Get notified whenever someone logs into your account.</p>
+                        <p className="text-sm font-bold text-zinc-900">Account Recovery Contact</p>
+                        <p className="text-xs text-zinc-500">{user.email || 'Unavailable'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 bg-emerald-500/20 text-emerald-600 text-[10px] font-bold uppercase rounded-full">Active</span>
-                      <button className="px-4 py-2 bg-zinc-200 text-zinc-600 rounded-xl text-xs font-bold hover:bg-zinc-300 transition-colors">
-                        Configure
-                      </button>
+                    <div className={`px-3 py-1 text-[10px] font-bold uppercase rounded-full ${
+                      user.emailVerified ? 'bg-emerald-500/20 text-emerald-700' : 'bg-amber-500/20 text-amber-700'
+                    }`}>
+                      {user.emailVerified ? 'Verified' : 'Verification Pending'}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl group hover:border-brand-500/20 transition-all">
+                  <div className="flex items-center justify-between p-6 bg-zinc-50 border border-black/[0.03] rounded-3xl">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                        <Globe size={20} className="text-zinc-400 group-hover:text-brand-600" />
+                        <Calendar size={20} className="text-zinc-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-zinc-900">Active Sessions</p>
-                        <p className="text-xs text-zinc-500">Manage and sign out of your active sessions on other devices.</p>
+                        <p className="text-sm font-bold text-zinc-900">Recent Account Activity</p>
+                        <p className="text-xs text-zinc-500">
+                          Last sign-in: {user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'Unavailable'}
+                        </p>
                       </div>
                     </div>
-                    <button className="px-4 py-2 bg-zinc-200 text-zinc-600 rounded-xl text-xs font-bold hover:bg-zinc-300 transition-colors">
-                      View Sessions
+                    <button
+                      onClick={() => logout()}
+                      className="px-4 py-2 bg-zinc-200 text-zinc-700 rounded-xl text-xs font-bold hover:bg-zinc-300 transition-colors"
+                    >
+                      Sign Out
                     </button>
                   </div>
                 </div>
 
                 <div className="mt-10 pt-10 border-t border-zinc-100">
-                  <button className="text-red-500 text-sm font-bold hover:underline">
-                    Delete Account and Data
-                  </button>
+                  <a
+                    href="https://myaccount.google.com/security"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-600 text-sm font-bold hover:underline inline-flex items-center gap-2"
+                  >
+                    Manage Provider Security <ExternalLink size={14} />
+                  </a>
                 </div>
               </div>
             </motion.div>
@@ -1488,7 +1841,7 @@ function MainApp() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-display font-bold text-zinc-900">Integration Guide</h2>
-                    <p className="text-sm text-zinc-500">How to add NoPaymentGateway.xyz to your website.</p>
+                    <p className="text-sm text-zinc-500">How to add NoPaymentsGateway.xyz to your website.</p>
                   </div>
                 </div>
                 
@@ -1496,7 +1849,7 @@ function MainApp() {
                   <section className="relative pl-10">
                     <div className="absolute left-0 top-0 w-8 h-8 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
                     <h3 className="text-lg font-bold text-zinc-900 mb-3">Create a Product</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Use the <span className="text-brand-600 font-bold cursor-pointer hover:underline" onClick={() => navigate('/create')}>Create</span> tab to define your product details and set your payment routing. NoPaymentGateway.xyz will securely host this data on the decentralized protocol.</p>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Use the <span className="text-brand-600 font-bold cursor-pointer hover:underline" onClick={() => navigate('/create')}>Create</span> tab to define your product details and set your payment routing. NoPaymentsGateway.xyz will securely host this data on the decentralized protocol.</p>
                   </section>
 
                   <section className="relative pl-10">
@@ -1663,7 +2016,7 @@ function MainApp() {
                     </div>
                   )}
 
-                  {checkoutData.methods.stripe && (
+                  {getStripeCheckoutUrl(checkoutData) && (
                     <div className="bg-white border border-black/[0.03] rounded-[2rem] p-6 shadow-sm">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center border border-brand-100">
@@ -1671,13 +2024,28 @@ function MainApp() {
                         </div>
                         <h4 className="font-bold text-zinc-900">Pay via Stripe</h4>
                       </div>
-                      <button className="w-full premium-button premium-button-brand py-4 text-sm">
-                        Pay with Card
-                      </button>
+                      <div className="space-y-2">
+                        <a
+                          href={getStripeCheckoutUrl(checkoutData)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full premium-button premium-button-brand py-4 text-sm flex items-center justify-center"
+                        >
+                          Pay with Card (Stripe)
+                        </a>
+                        <a
+                          href={getStripeCheckoutUrl(checkoutData)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-4 bg-black text-white rounded-2xl font-bold hover:bg-zinc-800 transition-all text-sm flex items-center justify-center"
+                        >
+                          Pay with Apple Pay / Google Pay
+                        </a>
+                      </div>
                     </div>
                   )}
 
-                  {checkoutData.methods.paypal && (
+                  {getPaypalCheckoutUrl(checkoutData) && (
                     <div className="bg-white border border-black/[0.03] rounded-[2rem] p-6 shadow-sm">
                       <div className="flex items-center gap-4 mb-6">
                         <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100">
@@ -1685,9 +2053,14 @@ function MainApp() {
                         </div>
                         <h4 className="font-bold text-zinc-900">Pay via PayPal</h4>
                       </div>
-                      <button className="w-full py-4 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all shadow-lg shadow-blue-600/20 text-sm">
+                      <a
+                        href={getPaypalCheckoutUrl(checkoutData)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-4 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center"
+                      >
                         PayPal Checkout
-                      </button>
+                      </a>
                     </div>
                   )}
                 </div>
@@ -1695,7 +2068,7 @@ function MainApp() {
               
               <div className="bg-zinc-50 px-8 py-6 text-center border-t border-zinc-100">
                 <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                  <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption by NoPaymentGateway.xyz
+                  <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption by NoPaymentsGateway.xyz
                 </p>
               </div>
             </motion.div>

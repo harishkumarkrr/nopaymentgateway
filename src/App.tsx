@@ -733,6 +733,16 @@ function MainApp() {
                             </div>
                             <ChevronRight size={20} className="text-zinc-300 group-hover:text-emerald-500 transition-colors" />
                           </div>
+                          <div className="flex justify-center mb-4">
+                            <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
+                              <img
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${hostedProduct.methods.upi}&pn=${encodeURIComponent(hostedProduct.merchantName)}&am=${hostedProduct.amount}&cu=${hostedProduct.currency}`)}`}
+                                alt="UPI QR Code"
+                                className="w-40 h-40"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                          </div>
                           <div className="bg-zinc-50 p-4 rounded-2xl border border-black/[0.02] flex items-center justify-between">
                             <code className="text-xs font-bold text-zinc-600">{hostedProduct.methods.upi}</code>
                             <button 
@@ -746,6 +756,12 @@ function MainApp() {
                               {copiedField === 'upi' ? <Check size={16} /> : <Copy size={16} />}
                             </button>
                           </div>
+                          <a
+                            href={`upi://pay?pa=${hostedProduct.methods.upi}&pn=${encodeURIComponent(hostedProduct.merchantName)}&am=${hostedProduct.amount}&cu=${hostedProduct.currency}`}
+                            className="mt-4 w-full premium-button premium-button-brand py-3 text-sm flex items-center justify-center"
+                          >
+                            Open UPI App
+                          </a>
                         </div>
                       )}
 

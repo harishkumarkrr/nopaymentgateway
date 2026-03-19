@@ -2,10 +2,11 @@ import express from "express";
 import path from "path";
 import "dotenv/config";
 
-console.log("Server starting...");
-
 const app = express();
 const PORT = 3000;
+const isVercel = Boolean(process.env.VERCEL);
+const isProduction = process.env.NODE_ENV === "production";
+const isLocalDev = !isProduction && !isVercel;
 
 // API routes
 app.get("/api/health", (req, res) => {
@@ -76,7 +77,7 @@ app.get("/api/privacy", (req, res) => {
 });
 
 // Static file serving and SPA fallback
-if (process.env.NODE_ENV === "production") {
+if (isProduction && !isVercel) {
   const distPath = path.join(process.cwd(), 'dist');
   app.use(express.static(distPath));
   app.get('*', (req, res) => {
@@ -92,7 +93,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 export async function startServer() {
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  if (isLocalDev) {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -101,7 +102,7 @@ export async function startServer() {
     app.use(vite.middlewares);
   }
 
-  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+  if (!isLocalDev) {
     // In production/Vercel, we don't necessarily call listen here if exported
   } else {
     app.listen(PORT, "0.0.0.0", () => {
@@ -111,7 +112,7 @@ export async function startServer() {
 }
 
 // For local development with tsx
-if (process.env.NODE_ENV !== 'production') {
+if (isLocalDev) {
   startServer();
 }
 

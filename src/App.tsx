@@ -275,11 +275,11 @@ const getTabTitle = (tab: string) => {
   return titleMap[tab] || (tab.charAt(0).toUpperCase() + tab.slice(1));
 };
 
-const BrandLogo = ({ className = "h-8 w-auto" }: { className?: string }) => (
+const BrandLogo = ({ className = "h-10 w-auto max-w-[280px]" }: { className?: string }) => (
   <img
-    src="/nopaymentgateway_wordmark.svg"
+    src="/nopaymentgateway_wordmark_v2.svg"
     alt="NoPaymentsGateway.xyz"
-    className={className}
+    className={`${className} object-contain`}
     referrerPolicy="no-referrer"
   />
 );
@@ -630,7 +630,7 @@ function MainApp() {
         <nav className="fixed top-0 w-full z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <BrandLogo className="h-8 w-auto" />
+              <BrandLogo className="h-12 w-auto max-w-[320px]" />
             </div>
             <div className="flex items-center gap-4">
               <button onClick={loginWithGoogle} className="text-sm font-medium hover:text-emerald-400 transition-colors">
@@ -700,7 +700,7 @@ function MainApp() {
         <footer className="border-t border-black/5 py-12 px-6 bg-zinc-50">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-2">
-              <BrandLogo className="h-6 w-auto" />
+              <BrandLogo className="h-8 w-auto max-w-[220px]" />
             </div>
             <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-zinc-500">
               <Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link>
@@ -727,7 +727,7 @@ function MainApp() {
           >
             <div className="p-6 flex items-center justify-between">
               <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-                <BrandLogo className="h-8 w-auto" />
+                <BrandLogo className="h-10 w-auto max-w-[280px]" />
               </div>
               <button className="md:hidden text-zinc-500 hover:text-zinc-900" onClick={() => setIsSidebarOpen(false)}>
                 <X size={20} />

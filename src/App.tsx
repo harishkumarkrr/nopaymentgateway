@@ -821,6 +821,44 @@ function MainApp() {
                           </div>
                         </div>
                       )}
+
+                      {hostedProduct.methods.stripe && (
+                        <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center border border-violet-100 group-hover:bg-violet-500 transition-colors">
+                                <CreditCard size={24} className="text-violet-600 group-hover:text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-zinc-900">Card Payment</h4>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Powered by Stripe</p>
+                              </div>
+                            </div>
+                          </div>
+                          <button className="w-full premium-button premium-button-brand py-3 text-sm">
+                            Pay with Card
+                          </button>
+                        </div>
+                      )}
+
+                      {hostedProduct.methods.paypal && (
+                        <div className="group bg-white p-6 rounded-[2rem] border border-black/[0.03] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 group-hover:bg-blue-500 transition-colors">
+                                <Wallet size={24} className="text-blue-600 group-hover:text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-zinc-900">PayPal</h4>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">PayPal Checkout</p>
+                              </div>
+                            </div>
+                          </div>
+                          <button className="w-full py-3 bg-[#0070ba] text-white rounded-2xl font-bold hover:bg-[#005ea6] transition-all text-sm">
+                            PayPal Checkout
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-12 text-center">

@@ -275,7 +275,7 @@ const getTabTitle = (tab: string) => {
   return titleMap[tab] || (tab.charAt(0).toUpperCase() + tab.slice(1));
 };
 
-const BrandLogo = ({ className = "h-10 w-auto max-w-[280px]" }: { className?: string }) => (
+const BrandLogo = ({ className = "h-14 w-auto max-w-[420px]" }: { className?: string }) => (
   <img
     src="/slaypay-logo-v9.svg"
     alt="slaypay.xyz"
@@ -292,7 +292,10 @@ function MainApp() {
   // Derive activeTab from location.pathname
   const activeTab = hostedProductId ? 'pay' : (location.pathname.substring(1) || 'dashboard');
   
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= 768;
+  });
   
   // Auth State
   const [user, setUser] = useState<User | null>(null);
@@ -327,6 +330,14 @@ function MainApp() {
       navigate('/dashboard');
     }
   }, [user, location.pathname, navigate]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSidebarOpen(window.innerWidth >= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Page Content State
   const [pageContent, setPageContent] = useState<{title: string, content: string} | null>(null);
@@ -630,7 +641,7 @@ function MainApp() {
         <nav className="fixed top-0 w-full z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <BrandLogo className="h-12 w-auto max-w-[320px]" />
+              <BrandLogo className="h-16 w-auto max-w-[460px]" />
             </div>
             <div className="flex items-center gap-4">
               <button onClick={loginWithGoogle} className="text-sm font-medium hover:text-emerald-400 transition-colors">
@@ -700,7 +711,7 @@ function MainApp() {
         <footer className="border-t border-black/5 py-12 px-6 bg-zinc-50">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-2">
-              <BrandLogo className="h-8 w-auto max-w-[220px]" />
+              <BrandLogo className="h-10 w-auto max-w-[320px]" />
             </div>
             <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-zinc-500">
               <Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link>
@@ -727,7 +738,7 @@ function MainApp() {
           >
             <div className="p-6 flex items-center justify-between">
               <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-                <BrandLogo className="h-10 w-auto max-w-[280px]" />
+                <BrandLogo className="h-14 w-auto max-w-[420px]" />
               </div>
               <button className="md:hidden text-zinc-500 hover:text-zinc-900" onClick={() => setIsSidebarOpen(false)}>
                 <X size={20} />
@@ -805,19 +816,12 @@ function MainApp() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
-        <header className="h-16 border-b border-black/10 flex items-center justify-between px-6 bg-white/80 backdrop-blur-md sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            {!isSidebarOpen && (
-              <button onClick={() => setIsSidebarOpen(true)} className="text-zinc-500 hover:text-zinc-900">
-                <Menu size={20} />
-              </button>
-            )}
-            <h1 className="font-display font-bold text-zinc-900 text-xl">
-              {getTabTitle(activeTab)}
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-          </div>
+        <header className="h-12 border-b border-black/10 flex items-center px-6 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+          {!isSidebarOpen && (
+            <button onClick={() => setIsSidebarOpen(true)} className="text-zinc-500 hover:text-zinc-900">
+              <Menu size={20} />
+            </button>
+          )}
         </header>
 
         <div className="p-6 md:p-10 max-w-6xl mx-auto w-full">

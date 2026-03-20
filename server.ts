@@ -16,7 +16,7 @@ app.get("/api/health", (req, res) => {
 app.get("/api/dashboard", (req, res) => {
   res.json({
     title: "Dashboard Overview",
-    content: "Welcome to your NoPaymentsGateway.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
+    content: "Welcome to your ooopay.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
   });
 });
 
@@ -37,7 +37,7 @@ app.get("/api/playground", (req, res) => {
 app.get("/api/docs", (req, res) => {
   res.json({
     title: "Integration & API",
-    content: "Comprehensive documentation for integrating NoPaymentsGateway.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
+    content: "Comprehensive documentation for integrating ooopay.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
   });
 });
 
@@ -58,14 +58,14 @@ app.get("/api/security", (req, res) => {
 app.get("/api/contact", (req, res) => {
   res.json({
     title: "Contact Us",
-    content: "Get in touch with our team for any inquiries. Email us at support@nopaymentsgateway.xyz or call us at 1-800-NOPAYMENT. Our support hours are Monday to Friday, 9 AM to 6 PM EST."
+    content: "Get in touch with our team for any inquiries. Email us at support@ooopay.xyz or call us at 1-800-NOPAYMENT. Our support hours are Monday to Friday, 9 AM to 6 PM EST."
   });
 });
 
 app.get("/api/terms", (req, res) => {
   res.json({
     title: "Terms and Conditions",
-    content: "By using NoPaymentsGateway.xyz, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods."
+    content: "By using ooopay.xyz, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods."
   });
 });
 

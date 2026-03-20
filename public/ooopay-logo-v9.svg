@@ -1,0 +1,32 @@
+<svg viewBox="0 0 340 150" xmlns="http://www.w3.org/2000/svg" width="340" height="150">
+
+  <!-- Ring 1 — green -->
+  <circle cx="44" cy="70" r="30" fill="none" stroke="#00C48C" stroke-width="6"/>
+  <!-- Ring 2 — orange, overlapping ring 1 -->
+  <circle cx="74" cy="70" r="30" fill="none" stroke="#FF8C42" stroke-width="6"/>
+  <!-- Ring 3 — blue, overlapping ring 2 -->
+  <circle cx="104" cy="70" r="30" fill="none" stroke="#378ADD" stroke-width="6"/>
+
+  <!-- "pay" tight next to rings -->
+  <text
+    x="148"
+    y="92"
+    font-family="'Trebuchet MS', 'Gill Sans', sans-serif"
+    font-size="68"
+    font-weight="700"
+    fill="#1A1A2E"
+    letter-spacing="-1"
+  >pay</text>
+
+  <!-- Tagline -->
+  <text
+    x="14"
+    y="130"
+    font-family="'Trebuchet MS', sans-serif"
+    font-size="11.5"
+    font-weight="400"
+    fill="#BBBBBB"
+    letter-spacing="2.5"
+  >no gateway. just delight.</text>
+
+</svg>

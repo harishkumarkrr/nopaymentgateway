@@ -1,5 +1,5 @@
 (function() {
-  console.log("NoPaymentsGateway.xyz: Script loaded and initializing...");
+  console.log("ooopay.xyz: Script loaded and initializing...");
 
   const PROJECT_ID = "nopaymentgateway";
   const DATABASE_ID = "(default)";
@@ -84,15 +84,15 @@
 
   async function fetchProduct(productId) {
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents/products/${productId}`;
-    console.log("NoPaymentsGateway.xyz: Fetching product from", url);
+    console.log("ooopay.xyz: Fetching product from", url);
     const response = await fetch(url);
     if (!response.ok) {
       const errText = await response.text();
-      console.error("NoPaymentsGateway.xyz: Fetch failed", response.status, errText);
+      console.error("ooopay.xyz: Fetch failed", response.status, errText);
       throw new Error(`Product not found or unavailable. Status: ${response.status}`);
     }
     const doc = await response.json();
-    console.log("NoPaymentsGateway.xyz: Raw Firestore doc", doc);
+    console.log("ooopay.xyz: Raw Firestore doc", doc);
     return parseFirestoreDocument(doc);
   }
 
@@ -212,7 +212,7 @@
       padding: '16px', backgroundColor: '#f3f4f6', borderTop: '1px solid #e5e7eb',
       textAlign: 'center', fontSize: '12px', color: '#6b7280', fontWeight: '500'
     });
-    footer.innerHTML = '🔒 Secured by NoPaymentsGateway.xyz Hosted Checkout';
+    footer.innerHTML = '🔒 Secured by ooopay.xyz Hosted Checkout';
 
     modal.appendChild(header);
     modal.appendChild(body);
@@ -231,16 +231,16 @@
 
     const productId = container.dataset.nopaymentgatewayId;
     if (!productId) {
-      console.warn("NoPaymentsGateway.xyz: Container found but no data-nopaymentgateway-id attribute provided.");
+      console.warn("ooopay.xyz: Container found but no data-nopaymentgateway-id attribute provided.");
       return;
     }
 
-    console.log("NoPaymentsGateway.xyz: Initializing container for product", productId);
+    console.log("ooopay.xyz: Initializing container for product", productId);
 
     try {
       // Fetch data
       const data = await fetchProduct(productId);
-      console.log("NoPaymentsGateway.xyz: Parsed product data", data);
+      console.log("ooopay.xyz: Parsed product data", data);
       
       if (!data.coverImage) {
         throw new Error("Product data is missing a cover image.");
@@ -261,9 +261,9 @@
       });
 
     } catch (err) {
-      console.error("NoPaymentsGateway.xyz Error:", err);
+      console.error("ooopay.xyz Error:", err);
       container.innerHTML = `<div style="padding: 20px; border: 1px dashed red; color: red; font-family: sans-serif; font-size: 14px;">
-        <strong>NoPaymentsGateway.xyz Error:</strong><br/>
+        <strong>ooopay.xyz Error:</strong><br/>
         ${err.message}
       </div>`;
     }
@@ -273,7 +273,7 @@
   function scanDOM() {
     const containers = document.querySelectorAll('div[data-nopaymentgateway-id]');
     if (containers.length > 0) {
-      console.log(`NoPaymentsGateway.xyz: Found ${containers.length} containers to initialize.`);
+      console.log(`ooopay.xyz: Found ${containers.length} containers to initialize.`);
     }
     containers.forEach(initContainer);
   }

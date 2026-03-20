@@ -1,7 +1,7 @@
 {
-  "name": "SteganoPay",
-  "short_name": "SteganoPay",
-  "description": "Invisible QR Steganography",
+  "name": "slaypay",
+  "short_name": "slaypay",
+  "description": "slaypay hosted payment links",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F5F5F5",

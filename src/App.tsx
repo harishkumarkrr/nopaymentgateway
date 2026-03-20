@@ -296,6 +296,7 @@ function MainApp() {
     if (typeof window === 'undefined') return true;
     return window.innerWidth >= 768;
   });
+  const [authSheetMode, setAuthSheetMode] = useState<'signin' | 'signup' | null>(null);
   
   // Auth State
   const [user, setUser] = useState<User | null>(null);
@@ -602,6 +603,24 @@ function MainApp() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleGoogleAuth = async () => {
+    try {
+      await loginWithGoogle();
+      setAuthSheetMode(null);
+    } catch (err) {
+      console.error('Google sign-in failed:', err);
+    }
+  };
+
+  const handleAppleAuth = async () => {
+    try {
+      await loginWithApple();
+      setAuthSheetMode(null);
+    } catch (err) {
+      console.error('Apple sign-in failed:', err);
+    }
+  };
+
   const PageHeader = () => {
     if (!pageContent || ['contact', 'terms', 'privacy'].includes(activeTab)) return null;
     return (
@@ -644,11 +663,11 @@ function MainApp() {
               <BrandLogo className="h-20 w-auto" />
             </div>
             <div className="flex items-center gap-4">
-              <button onClick={loginWithGoogle} className="text-sm font-medium hover:text-emerald-400 transition-colors">
-                Google
+              <button onClick={() => setAuthSheetMode('signin')} className="text-sm font-medium hover:text-emerald-400 transition-colors">
+                Sign In
               </button>
-              <button onClick={loginWithApple} className="px-5 py-2 bg-black text-white rounded-full text-sm font-bold hover:bg-zinc-800 transition-all">
-                Apple
+              <button onClick={() => setAuthSheetMode('signup')} className="px-5 py-2 bg-black text-white rounded-full text-sm font-bold hover:bg-zinc-800 transition-all">
+                Sign Up
               </button>
             </div>
           </div>
@@ -672,11 +691,8 @@ function MainApp() {
                 The ultimate hosted checkout for creators and indie hackers. Accept UPI, Bank Transfers, and Crypto with zero platform fees.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button onClick={loginWithGoogle} className="w-full sm:w-auto px-8 py-4 bg-black text-white rounded-full font-bold text-sm hover:bg-zinc-800 transition-all flex items-center justify-center gap-2">
-                  Continue with Google <ArrowRight size={16} />
-                </button>
-                <button onClick={loginWithApple} className="w-full sm:w-auto px-8 py-4 bg-zinc-900 text-white rounded-full font-bold text-sm hover:bg-black transition-all flex items-center justify-center gap-2">
-                  Continue with Apple
+                <button onClick={() => setAuthSheetMode('signup')} className="w-full sm:w-auto px-8 py-4 bg-black text-white rounded-full font-bold text-sm hover:bg-zinc-800 transition-all flex items-center justify-center gap-2">
+                  Start Processing <ArrowRight size={16} />
                 </button>
                 <button onClick={() => navigate('/docs')} className="w-full sm:w-auto px-8 py-4 bg-black/5 text-zinc-900 border border-black/10 rounded-full font-bold text-sm hover:bg-black/10 transition-all flex items-center justify-center gap-2">
                   <Code size={16} /> View Documentation
@@ -808,17 +824,65 @@ function MainApp() {
                 <div className="bg-white border border-black/5 rounded-2xl p-4 mb-4">
                   <p className="text-xs text-zinc-500 mb-3 text-center">Sign in to access your dashboard</p>
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={loginWithGoogle} className="w-full py-2 bg-black text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors">
-                      Google
+                    <button onClick={() => setAuthSheetMode('signin')} className="w-full py-2 bg-black text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors">
+                      Sign In
                     </button>
-                    <button onClick={loginWithApple} className="w-full py-2 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-black transition-colors">
-                      Apple
+                    <button onClick={() => setAuthSheetMode('signup')} className="w-full py-2 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-black transition-colors">
+                      Sign Up
                     </button>
                   </div>
                 </div>
               )}
             </div>
           </motion.aside>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {authSheetMode && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setAuthSheetMode(null)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              className="relative z-[121] w-full max-w-md bg-white border border-black/10 rounded-3xl shadow-2xl p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-zinc-900">
+                  {authSheetMode === 'signup' ? 'Create Your Account' : 'Welcome Back'}
+                </h3>
+                <button onClick={() => setAuthSheetMode(null)} className="text-zinc-500 hover:text-zinc-900">
+                  <X size={18} />
+                </button>
+              </div>
+              <p className="text-sm text-zinc-500 mb-5">
+                {authSheetMode === 'signup' ? 'Sign up using your preferred account:' : 'Sign in using your preferred account:'}
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={handleGoogleAuth}
+                  className="w-full py-3 px-4 bg-white border border-black/10 rounded-xl text-sm font-bold text-zinc-800 hover:bg-zinc-50 transition-colors flex items-center justify-center gap-3"
+                >
+                  <span className="w-5 h-5 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-[12px] font-black text-zinc-700">G</span>
+                  {authSheetMode === 'signup' ? 'Sign up with Google' : 'Sign in with Google'}
+                </button>
+                <button
+                  onClick={handleAppleAuth}
+                  className="w-full py-3 px-4 bg-black text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition-colors flex items-center justify-center gap-3"
+                >
+                  <span className="text-base leading-none"></span>
+                  {authSheetMode === 'signup' ? 'Sign up with Apple' : 'Sign in with Apple'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

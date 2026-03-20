@@ -38,7 +38,7 @@ import {
   Bitcoin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth, db, loginWithGoogle, logout } from './firebase';
+import { auth, db, loginWithGoogle, loginWithApple, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, serverTimestamp, onSnapshot } from 'firebase/firestore';
 
@@ -275,7 +275,7 @@ const getTabTitle = (tab: string) => {
   return titleMap[tab] || (tab.charAt(0).toUpperCase() + tab.slice(1));
 };
 
-const BrandLogo = ({ className = "h-14 w-auto max-w-[420px]" }: { className?: string }) => (
+const BrandLogo = ({ className = "h-20 w-auto" }: { className?: string }) => (
   <img
     src="/slaypay-logo-v9.svg"
     alt="slaypay.xyz"
@@ -641,14 +641,14 @@ function MainApp() {
         <nav className="fixed top-0 w-full z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <BrandLogo className="h-16 w-auto max-w-[460px]" />
+              <BrandLogo className="h-20 w-auto" />
             </div>
             <div className="flex items-center gap-4">
               <button onClick={loginWithGoogle} className="text-sm font-medium hover:text-emerald-400 transition-colors">
-                Sign In
+                Google
               </button>
-              <button onClick={loginWithGoogle} className="px-5 py-2 bg-black text-white rounded-full text-sm font-bold hover:bg-zinc-800 transition-all">
-                Sign Up
+              <button onClick={loginWithApple} className="px-5 py-2 bg-black text-white rounded-full text-sm font-bold hover:bg-zinc-800 transition-all">
+                Apple
               </button>
             </div>
           </div>
@@ -673,7 +673,10 @@ function MainApp() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button onClick={loginWithGoogle} className="w-full sm:w-auto px-8 py-4 bg-black text-white rounded-full font-bold text-sm hover:bg-zinc-800 transition-all flex items-center justify-center gap-2">
-                  Start Processing <ArrowRight size={16} />
+                  Continue with Google <ArrowRight size={16} />
+                </button>
+                <button onClick={loginWithApple} className="w-full sm:w-auto px-8 py-4 bg-zinc-900 text-white rounded-full font-bold text-sm hover:bg-black transition-all flex items-center justify-center gap-2">
+                  Continue with Apple
                 </button>
                 <button onClick={() => navigate('/docs')} className="w-full sm:w-auto px-8 py-4 bg-black/5 text-zinc-900 border border-black/10 rounded-full font-bold text-sm hover:bg-black/10 transition-all flex items-center justify-center gap-2">
                   <Code size={16} /> View Documentation
@@ -711,7 +714,7 @@ function MainApp() {
         <footer className="border-t border-black/5 py-12 px-6 bg-zinc-50">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-2">
-              <BrandLogo className="h-10 w-auto max-w-[320px]" />
+              <BrandLogo className="h-14 w-auto" />
             </div>
             <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-zinc-500">
               <Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link>
@@ -738,7 +741,7 @@ function MainApp() {
           >
             <div className="p-6 flex items-center justify-between">
               <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-                <BrandLogo className="h-14 w-auto max-w-[420px]" />
+                <BrandLogo className="h-24 w-auto" />
               </div>
               <button className="md:hidden text-zinc-500 hover:text-zinc-900" onClick={() => setIsSidebarOpen(false)}>
                 <X size={20} />
@@ -804,9 +807,14 @@ function MainApp() {
               ) : (
                 <div className="bg-white border border-black/5 rounded-2xl p-4 mb-4">
                   <p className="text-xs text-zinc-500 mb-3 text-center">Sign in to access your dashboard</p>
-                  <button onClick={loginWithGoogle} className="w-full py-2 bg-black text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors">
-                    Sign In
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={loginWithGoogle} className="w-full py-2 bg-black text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors">
+                      Google
+                    </button>
+                    <button onClick={loginWithApple} className="w-full py-2 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-black transition-colors">
+                      Apple
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -876,7 +884,7 @@ function MainApp() {
                     </h1>
                     <p className="text-zinc-500 text-lg mb-8 leading-relaxed">
                       Secure payment request from <span className="font-bold text-zinc-900">{hostedProduct.merchantName}</span>. 
-                      Your transaction is protected by end-to-end encryption.
+                      Payment instructions are delivered over secure HTTPS, and payment is completed in your selected external app.
                     </p>
 
                     <div className="flex items-center gap-4 p-6 bg-zinc-50 rounded-[2rem] border border-black/[0.02]">

@@ -149,7 +149,7 @@ const isHttpUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
 const staticPageContent: Record<string, { title: string; content: string }> = {
   dashboard: {
     title: "Dashboard Overview",
-    content: "Welcome to your ooopay.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
+    content: "Welcome to your slaypay.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics."
   },
   create: {
     title: "Create Product",
@@ -161,13 +161,13 @@ const staticPageContent: Record<string, { title: string; content: string }> = {
   },
   docs: {
     title: "Integration & API",
-    content: "Comprehensive documentation for integrating ooopay.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
+    content: "Comprehensive documentation for integrating slaypay.xyz into your existing workflows using our lightweight JS SDK and REST APIs."
   },
   contact: {
     title: "Contact Us",
     content: `Need help with your payment links, merchant account setup, or link verification process? We are here to help.
 
-Support Email: support@ooopay.xyz
+Support Email: support@slaypay.xyz
 Response Time: Within 1 business day
 
 When contacting support, include:
@@ -186,7 +186,7 @@ For urgent production-impacting issues, mention "URGENT" in the email subject li
     content: `Effective Date: March 19, 2026
 
 1. Service Scope
-ooopay.xyz provides tools to publish and share payment instruction links. We are not a payment processor, bank, wallet provider, money transmitter, or escrow service. Funds are transferred directly between payer and merchant through third-party rails selected by the merchant.
+slaypay.xyz provides tools to publish and share payment instruction links. We are not a payment processor, bank, wallet provider, money transmitter, or escrow service. Funds are transferred directly between payer and merchant through third-party rails selected by the merchant.
 
 2. Merchant Responsibility
 Merchants are solely responsible for:
@@ -208,7 +208,7 @@ You are responsible for keeping your account access secure and for all actions p
 We aim for reliable service but do not guarantee uninterrupted availability. Features may change, be updated, or be discontinued.
 
 7. Limitation of Liability
-To the maximum extent permitted by law, ooopay.xyz is not liable for indirect, incidental, special, consequential, or punitive damages, or for loss of revenue/profits/data arising from use of the service.
+To the maximum extent permitted by law, slaypay.xyz is not liable for indirect, incidental, special, consequential, or punitive damages, or for loss of revenue/profits/data arising from use of the service.
 
 8. Termination
 We may suspend or terminate access for violations, abuse, legal obligations, or operational risk.
@@ -217,13 +217,13 @@ We may suspend or terminate access for violations, abuse, legal obligations, or 
 These terms are governed by applicable local laws based on the merchant’s operating jurisdiction unless otherwise required by law.
 
 10. Contact
-For legal or compliance concerns, contact: support@ooopay.xyz`
+For legal or compliance concerns, contact: support@slaypay.xyz`
   },
   privacy: {
     title: "Privacy Policy",
     content: `Effective Date: March 19, 2026
 
-ooopay.xyz values your privacy. This policy explains what we collect, why we collect it, and how it is handled.
+slaypay.xyz values your privacy. This policy explains what we collect, why we collect it, and how it is handled.
 
 1. Information We Collect
 - Account data: name, email, authentication provider details
@@ -255,7 +255,7 @@ You may request access, correction, or deletion of personal data, subject to leg
 The platform is not intended for children under 18.
 
 9. Contact
-Privacy requests and concerns: support@ooopay.xyz`
+Privacy requests and concerns: support@slaypay.xyz`
   }
 };
 
@@ -277,8 +277,8 @@ const getTabTitle = (tab: string) => {
 
 const BrandLogo = ({ className = "h-10 w-auto max-w-[280px]" }: { className?: string }) => (
   <img
-    src="/ooopay-logo-v9.svg"
-    alt="ooopay.xyz"
+    src="/slaypay-logo-v9.svg"
+    alt="slaypay.xyz"
     className={`${className} object-contain`}
     referrerPolicy="no-referrer"
   />
@@ -707,7 +707,7 @@ function MainApp() {
               <Link to="/terms" className="hover:text-emerald-400 transition-colors">Terms & Conditions</Link>
               <Link to="/privacy" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link>
             </div>
-            <p className="text-xs text-zinc-400">© 2026 ooopay.xyz. All rights reserved.</p>
+            <p className="text-xs text-zinc-400">© 2026 slaypay.xyz. All rights reserved.</p>
           </div>
         </footer>
       </div>
@@ -853,7 +853,7 @@ function MainApp() {
                       <div className="w-10 h-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
                         <ShieldCheck size={20} />
                       </div>
-                      <span className="text-xs font-black uppercase tracking-widest text-zinc-400">ooopay.xyz</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-zinc-400">slaypay.xyz</span>
                     </div>
 
                     {hostedProduct.coverImage && (
@@ -1068,7 +1068,7 @@ function MainApp() {
                         <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption
                       </p>
                       <p className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
-                        Powered by ooopay.xyz
+                        Powered by slaypay.xyz
                       </p>
                     </div>
                   </div>
@@ -1289,7 +1289,7 @@ function MainApp() {
                             type="text"
                             value={merchantName}
                             onChange={(e) => setMerchantName(e.target.value)}
-                            placeholder="e.g. ooopay.xyz Store"
+                            placeholder="e.g. slaypay.xyz Store"
                             className="w-full px-5 py-4 bg-zinc-50 border border-black/[0.03] rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium"
                           />
                         </div>
@@ -1553,7 +1553,7 @@ function MainApp() {
                           <div className="w-2.5 h-2.5 rounded-full bg-zinc-300"></div>
                         </div>
                         <div className="mx-auto bg-white border border-black/[0.05] rounded-full px-4 py-1 text-[10px] text-zinc-400 font-mono flex items-center gap-2">
-                          <Lock size={10} /> ooopay.xyz/s/{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}
+                          <Lock size={10} /> slaypay.xyz/s/{user.displayName?.toLowerCase().replace(/\s+/g, '') || 'store'}
                         </div>
                       </div>
 
@@ -1613,7 +1613,7 @@ function MainApp() {
                         </div>
                         <div>
                           <h4 className="text-lg font-bold text-zinc-900 mb-2">Test the Overlay</h4>
-                          <p className="text-sm text-zinc-500">Click the button below to trigger the ooopay.xyz checkout overlay just as it would appear on your website.</p>
+                          <p className="text-sm text-zinc-500">Click the button below to trigger the slaypay.xyz checkout overlay just as it would appear on your website.</p>
                         </div>
                         <button 
                           disabled={!testProductId}
@@ -1841,7 +1841,7 @@ function MainApp() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-display font-bold text-zinc-900">Integration Guide</h2>
-                    <p className="text-sm text-zinc-500">How to add ooopay.xyz to your website.</p>
+                    <p className="text-sm text-zinc-500">How to add slaypay.xyz to your website.</p>
                   </div>
                 </div>
                 
@@ -1849,7 +1849,7 @@ function MainApp() {
                   <section className="relative pl-10">
                     <div className="absolute left-0 top-0 w-8 h-8 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
                     <h3 className="text-lg font-bold text-zinc-900 mb-3">Create a Product</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Use the <span className="text-brand-600 font-bold cursor-pointer hover:underline" onClick={() => navigate('/create')}>Create</span> tab to define your product details and set your payment routing. ooopay.xyz will securely host this data on the decentralized protocol.</p>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Use the <span className="text-brand-600 font-bold cursor-pointer hover:underline" onClick={() => navigate('/create')}>Create</span> tab to define your product details and set your payment routing. slaypay.xyz will securely host this data on the decentralized protocol.</p>
                   </section>
 
                   <section className="relative pl-10">
@@ -2068,7 +2068,7 @@ function MainApp() {
               
               <div className="bg-zinc-50 px-8 py-6 text-center border-t border-zinc-100">
                 <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                  <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption by ooopay.xyz
+                  <ShieldCheck size={14} className="text-brand-500" /> Secure Encryption by slaypay.xyz
                 </p>
               </div>
             </motion.div>

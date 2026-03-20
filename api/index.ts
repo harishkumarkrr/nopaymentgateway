@@ -7,7 +7,7 @@ const contentByTab: Record<string, ContentResponse> = {
   dashboard: {
     title: "Dashboard Overview",
     content:
-      "Welcome to your ooopay.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics.",
+      "Welcome to your slaypay.xyz dashboard. Here you can monitor your transaction volume, manage your active products, and view real-time payment analytics.",
   },
   create: {
     title: "Create Product",
@@ -22,7 +22,7 @@ const contentByTab: Record<string, ContentResponse> = {
   docs: {
     title: "Integration & API",
     content:
-      "Comprehensive documentation for integrating ooopay.xyz into your existing workflows using our lightweight JS SDK and REST APIs.",
+      "Comprehensive documentation for integrating slaypay.xyz into your existing workflows using our lightweight JS SDK and REST APIs.",
   },
   profile: {
     title: "Profile Settings",
@@ -37,12 +37,12 @@ const contentByTab: Record<string, ContentResponse> = {
   contact: {
     title: "Contact Us",
     content:
-      "Get in touch with our team for any inquiries. Email us at support@ooopay.xyz or call us at 1-800-NOPAYMENT. Our support hours are Monday to Friday, 9 AM to 6 PM EST.",
+      "Get in touch with our team for any inquiries. Email us at support@slaypay.xyz or call us at 1-800-NOPAYMENT. Our support hours are Monday to Friday, 9 AM to 6 PM EST.",
   },
   terms: {
     title: "Terms and Conditions",
     content:
-      "By using ooopay.xyz, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods.",
+      "By using slaypay.xyz, you agree to our terms of service. You must be at least 18 years old to use our platform. We reserve the right to suspend accounts that violate our acceptable use policy, including processing payments for prohibited goods.",
   },
   privacy: {
     title: "Privacy Policy",
